@@ -1,10 +1,10 @@
 import React from "react";
-import Sessions from "./components/Sessions";
+import SessionTitle from "./components/SessionTitle";
 
 const page = () => {
   return (
     <div>
-      <Sessions />
+      <SessionTitle />
     </div>
   );
 };
