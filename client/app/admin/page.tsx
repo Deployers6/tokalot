@@ -5,7 +5,7 @@ import Header from "./components/Header";
 
 const page = () => {
   return (
-    <div className="flex flex-col h-screen w-screen ">
+    <div className="flex flex-col h-screen w-screen bg-white">
       <div>
         <Header />
       </div>
