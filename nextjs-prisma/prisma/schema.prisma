@@ -13,19 +13,22 @@ enum UserRole {
   TEACHER
 }
 
+
+
 model User {
   id             String   @id @default(cuid())
   clerkId        String   @unique
   email          String   @unique
   fullName       String
   phoneNumber    String?
-  role           UserRole @default(USER)
+  role           UserRole @default(USER) 
   membershipType Boolean  @default(false)
   isTrialUsed    Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  bookings Booking[]
+  bookings    Booking[]
+  memberships Membership[] 
 }
 
 model Teacher {
@@ -67,4 +70,17 @@ model Booking {
 
   user    User    @relation(fields: [userId], references: [id])
   section Section @relation(fields: [sectionId], references: [id])
+}
+model Membership {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  type          String
+  startDate     DateTime
+  endDate       DateTime
+  totalSessions Int
+  usedSessions  Int      @default(0)
+  status        String   @default("active") 
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
