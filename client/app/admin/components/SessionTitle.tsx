@@ -71,7 +71,7 @@ const DAYS = [
   "Saturday",
 ];
 
-const Sessions = () => {
+const SessionTitle = () => {
   const today = new Date();
   const [selected, setSelected] = useState<{
     day: number;
@@ -125,4 +125,4 @@ const Sessions = () => {
   );
 };
 
-export default Sessions;
+export default SessionTitle;
