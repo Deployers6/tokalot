@@ -45,7 +45,8 @@ import { useState } from "react";
 import Header from "./Header";
 import Footer from "./Footer";
 import DatePicker from "./Calendar";
-import { CircleAlert } from "lucide-react";
+import { CircleAlert, Pencil } from "lucide-react";
+import { mockSessions } from "../lib/mockSessions";
 
 const MONTHS = [
   "January",
@@ -71,7 +72,7 @@ const DAYS = [
   "Saturday",
 ];
 
-const SessionTitle = () => {
+const Session = () => {
   const today = new Date();
   const [selected, setSelected] = useState<{
     day: number;
@@ -90,7 +91,6 @@ const SessionTitle = () => {
   return (
     <div className="h-screen w-screen flex flex-col justify-between">
       <div>
-        <Header />
         <div className="w-screen mt-5 pl-5 border-b pb-5 border-[#BCC8D1]">
           {/* selected болон setSelected-ийг Calendar руу дамжуулна */}
           <DatePicker selected={selected} setSelected={setSelected} />
@@ -109,7 +109,7 @@ const SessionTitle = () => {
 
         <div className="flex w-screen justify-between px-5 mt-5">
           <div>
-            <div className="font-extrabold">Today's Sessions</div>
+            <div className="font-extrabold">Sessions</div>
             {/* Сонгосон огноог харуулна */}
             <div className="text-gray-500 text-sm">
               {dayName}, {monthName} {dayNum}
@@ -119,10 +119,33 @@ const SessionTitle = () => {
             +
           </div>
         </div>
+        <div>
+          <div className="flex flex-col gap-5 mt-5 mx-5">
+            {mockSessions.map((session) => (
+              <div
+                key={session.id}
+                className="bg-white shadow-md border-l-8 border-gray-500 rounded-[15px] flex flex-col gap-3 p-5"
+              >
+                <div className="text-[#20BEF9]">
+                  {session.startTime} - {session.endTime}
+                </div>
+                <div className="flex justify-between">
+                  <h2 className="font-extrabold">{session.title}</h2>
+                  <div className="bg-[#DAF2F9] h-[30px] w-[30px] flex items-center justify-center rounded-[10px]">
+                    <Pencil className="h-[15px] w-[15px]  " />
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <div>{session.teacherName}</div>
+                  <div>{session.capacity}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
-      <Footer />
     </div>
   );
 };
 
-export default SessionTitle;
+export default Session;
