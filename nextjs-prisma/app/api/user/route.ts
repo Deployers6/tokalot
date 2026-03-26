@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma'
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET
-  if (!WEBHOOK_SECRET) throw new Error('Secret setup required')
+  if (!WEBHOOK_SECRET) throw new Error('Webhook Secret setup required')
 
   const headerPayload = await headers();
   const svix_id = headerPayload.get("svix-id");
@@ -13,7 +13,7 @@ export async function POST(req: Request) {
   const svix_signature = headerPayload.get("svix-signature");
 
   if (!svix_id || !svix_timestamp || !svix_signature) {
-    return new Response('Error occured -- no svix headers', { status: 400 })
+    return new Response('Error: No svix headers', { status: 400 })
   }
 
   const payload = await req.json()
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
       "svix-signature": svix_signature,
     }) as WebhookEvent
   } catch (err) {
-    return new Response('Error occured', { status: 400 })
+    return new Response('Error: Verification failed', { status: 400 })
   }
 
   const eventType = evt.type;
@@ -36,13 +36,15 @@ export async function POST(req: Request) {
   if (eventType === 'user.created') {
     const { id, email_addresses, first_name, last_name, unsafe_metadata } = evt.data;
 
+
+    const role = (unsafe_metadata?.role as any) === "USER" ? "ADMIN" : "USER";
+
     await prisma.user.create({
       data: {
         clerkId: id,
         email: email_addresses[0].email_address,
         fullName: `${first_name || ""} ${last_name || ""}`.trim(),
-     
-        role: (unsafe_metadata?.role as any) === "ADMIN" ? "ADMIN" : "USER",
+        role: role,
         membershipType: false,
         isTrialUsed: false,
       },
