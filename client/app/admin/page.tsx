@@ -3,7 +3,7 @@ import Session from "./components/Session";
 import Footer from "./components/Footer";
 import Header from "./components/Header";
 
-const page = () => {
+export const page = () => {
   return (
     <div className="flex flex-col h-screen w-screen bg-white">
       <div>
