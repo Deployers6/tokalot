@@ -3,7 +3,7 @@
 import { Header } from "@/components/landing/Header";
 import { Footer } from "@/components/landing/Footer";
 import { MainOne } from "@/components/landing/MainOne";
-import { MainTwo } from "@/components/landing/MainTwo";
+import { MainTwo } from "@/components/landing/MainTwo";git 
 import { MainThree } from "@/components/landing/MainThree";
 import { MainFour } from "@/components/landing/MainFour";
 

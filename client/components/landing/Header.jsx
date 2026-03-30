@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs";
 
 export const Header = () => {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const { isSignedIn, isLoaded } = useUser();
 
   return (
     <header className="w-full bg-[#051F25]/80 backdrop-blur-md border-b border-white/5 sticky top-0 z-50">
@@ -32,18 +34,30 @@ export const Header = () => {
         </nav>
 
         <div className="hidden md:flex gap-4 text-sm">
-          <button
-            onClick={() => router.push("/sign-in")}
-            className="text-slate-400 hover:text-sky-400 transition"
-          >
-            Sign In
-          </button>
-          <button
-            onClick={() => router.push("/sign-up")}
-            className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#0088AA] to-[#00B4D8] text-white shadow-md hover:opacity-90 transition"
-          >
-            Sign Up
-          </button>
+          {isLoaded && (isSignedIn ? (
+            <>
+              <button
+                onClick={() => router.push("/dashboard")}
+                className="text-slate-400 hover:text-sky-400 transition"
+              >
+                Dashboard
+              </button>
+              <UserButton />
+            </>
+          ) : (
+            <>
+              <SignInButton mode="modal">
+                <button className="text-slate-400 hover:text-sky-400 transition">
+                  Sign In
+                </button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <button className="px-5 py-2 rounded-xl bg-linear-to-r from-[#0088AA] to-[#00B4D8] text-white shadow-md hover:opacity-90 transition">
+                  Sign Up
+                </button>
+              </SignUpButton>
+            </>
+          ))}
         </div>
 
         <button
@@ -62,18 +76,28 @@ export const Header = () => {
           <button>Membership</button>
 
           <div className="flex flex-col gap-3 pt-4 border-t border-white/10">
-            <button
-              onClick={() => router.push("/sign-in")}
-              className="text-left"
-            >
-              Sign In
-            </button>
-            <button
-              onClick={() => router.push("/sign-up")}
-              className="bg-sky-400 text-[#004963] px-4 py-2 rounded-xl"
-            >
-              Sign Up
-            </button>
+            {isLoaded && (isSignedIn ? (
+              <>
+                <button
+                  onClick={() => router.push("/dashboard")}
+                  className="text-left"
+                >
+                  Dashboard
+                </button>
+                <UserButton />
+              </>
+            ) : (
+              <>
+                <SignInButton mode="modal">
+                  <button className="text-left">Sign In</button>
+                </SignInButton>
+                <SignUpButton mode="modal">
+                  <button className="bg-sky-400 text-[#004963] px-4 py-2 rounded-xl">
+                    Sign Up
+                  </button>
+                </SignUpButton>
+              </>
+            ))}
           </div>
         </div>
       )}
