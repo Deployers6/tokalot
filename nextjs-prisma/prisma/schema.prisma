@@ -12,7 +12,11 @@ enum UserRole {
   USER
   TEACHER
 }
-
+enum Level {
+  Beginner
+  Intermediate
+  Advanced
+}
 
 
 model User {
@@ -47,6 +51,7 @@ model Teacher {
 model Section {
   id        String   @id @default(cuid())
   title     String
+  level     Level    @default(Beginner) 
   teacherId String
   StartTime DateTime
   endTime   DateTime
