@@ -8,7 +8,7 @@ export default function DashboardLayout({
   return (
     <div>
       <div className="absolute top-4 right-4 z-50">
-        <UserButton afterSignOutUrl="/" />
+        {/* <UserButton afterSignOutUrl="/" /> */}
       </div>
       {children}
     </div>
