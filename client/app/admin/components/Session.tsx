@@ -176,7 +176,22 @@ import {
   UsersRound,
   XCircle,
 } from "lucide-react";
+// import {
+//   Dialog,
+//   DialogContent,
+//   DialogTrigger,
+// } from "@/app/admin/components/ui";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  DialogTitle,
+} from "../components/ui/dialog";
+
+import CreateSession from "./CreateSession";
 import { mockSessions } from "../lib/mockSessions";
+import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 
 const MONTHS = [
   "January",
@@ -243,9 +258,25 @@ const Session = () => {
               {dayName}, {monthName} {dayNum}
             </div>
           </div>
-          <div className="h-[52px] w-[52px] rounded-2xl bg-[#20BEF9] flex items-center justify-center text-[30px] text-[#004963] shadow-[0_0_10px_rgba(32,190,249,0.6)]">
+          {/* <div className="h-[52px] w-[52px] rounded-2xl bg-[#20BEF9] flex items-center justify-center text-[30px] text-[#004963] shadow-[0_0_10px_rgba(32,190,249,0.6)]">
             +
-          </div>
+          </div> */}
+          <Dialog>
+            <DialogTrigger asChild>
+              <div className="h-[52px] w-[52px] rounded-2xl bg-[#20BEF9] flex items-center justify-center text-[30px] text-[#004963] shadow-[0_0_10px_rgba(32,190,249,0.6)] cursor-pointer">
+                +
+              </div>
+            </DialogTrigger>
+            <DialogContent
+              className="w-[90%] rounded-2xl p-0 border-none"
+              aria-describedby={undefined}
+            >
+              <VisuallyHidden.Root>
+                <DialogTitle>Create New Session</DialogTitle>
+              </VisuallyHidden.Root>
+              <CreateSession />
+            </DialogContent>
+          </Dialog>
         </div>
 
         <div className="flex flex-col gap-5 mt-5 mx-5 pb-10">
