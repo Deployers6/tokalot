@@ -31,7 +31,7 @@ export const page = () => {
       <div>
         <Header />
       </div>
-      <div className="pb-[75px]">
+      <div className="pb-[75px] pt-[75px]">
         <Session />
       </div>
       <Footer />
