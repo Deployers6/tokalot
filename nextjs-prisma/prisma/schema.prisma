@@ -12,31 +12,28 @@ enum UserRole {
   USER
   TEACHER
 }
+
 enum Level {
   Beginner
   Intermediate
   Advanced
 }
 
-
 model User {
-  id             String   @id @default(cuid()) 
-  clerkId        String   @unique              // Clerk-ээс ирэх 'user_...' ID
+  clerkId        String   @id
   email          String   @unique
   fullName       String
   phoneNumber    String?
-  role           UserRole @default(USER) 
+  role           UserRole @default(USER)
   membershipType Boolean  @default(false)
   isTrialUsed    Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  // Relations
-  bookings    Booking[]
-  membership  Membership? 
+  bookings   Booking[]
+  membership Membership?
 
-  // ClerkId-аар хайлт хийхэд зориулсан индекс
-  @@index([clerkId]) 
+  @@index([clerkId])
 }
 
 model Teacher {
@@ -55,7 +52,7 @@ model Teacher {
 model Section {
   id        String   @id @default(cuid())
   title     String
-  level     Level    @default(Beginner) 
+  level     Level    @default(Beginner)
   teacherId String
   StartTime DateTime
   endTime   DateTime
@@ -70,46 +67,43 @@ model Section {
 
 model Booking {
   id        String   @id @default(cuid())
-  clerkId   String   // userId-ийн оронд шууд clerkId хадгална
+  clerkId   String
   sectionId String
   status    Boolean  @default(false)
   isTrial   Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Холболтыг хийхдээ User-ийн id-г биш, clerkId-г нь reference (лавлагаа) болгож авна
   user    User    @relation(fields: [clerkId], references: [clerkId], onDelete: Cascade)
   section Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
 
-  // Давхар бүртгэлээс сэргийлэх (clerkId болон sectionId-аар)
   @@unique([clerkId, sectionId])
   @@index([clerkId])
   @@index([sectionId])
 }
 
 model Membership {
-  id            String   @id @default(uuid())
-  
-
-  clerkId       String   @unique 
-  user          User     @relation(fields: [clerkId], references: [clerkId])
+  clerkId String @id
+  user    User   @relation(fields: [clerkId], references: [clerkId])
 
   startDate     DateTime
   endDate       DateTime
   totalSessions Int      @default(0)
   usedSessions  Int      @default(0)
   status        String   @default("pending")
-  
-  history       MembershipHistory[]
+
+  history MembershipHistory[]
 }
 
 model MembershipHistory {
-  id           String     @id @default(uuid())
-  membershipId String
-  membership   Membership @relation(fields: [membershipId], references: [id])
-  
-  action       String    
-  change       Int       
-  
-  createdAt    DateTime   @default(now())
+  id           String     @id @default(cuid()) // uuid() эсвэл cuid()
+  clerkId      String     
+  membership   Membership @relation(fields: [clerkId], references: [clerkId], onDelete: Cascade)
+
+  action String 
+  change Int 
+
+  createdAt DateTime @default(now())
+
+  @@index([clerkId])
 }

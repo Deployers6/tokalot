@@ -1,75 +1,103 @@
-import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { sectionId, clerkId } = body; // Clerk-ээс ирсэн user ID
+    const { sectionId, clerkId } = body;
 
     if (!clerkId || !sectionId) {
-      return NextResponse.json({ error: "clerkId эсвэл sectionId дутуу байна" }, { status: 400 });
+      return NextResponse.json({ message: "Мэдээлэл дутуу байна" }, { status: 400 });
     }
 
+
     const result = await prisma.$transaction(async (tx) => {
-      // 1. ClerkId-аар манай бааз дахь User-ийг олох (эсвэл үүсгэх)
+      
+   
       const user = await tx.user.findUnique({
         where: { clerkId: clerkId },
+        include: { membership: true }
       });
 
       if (!user) throw new Error("USER_NOT_FOUND");
 
-      // 2. Section (Хичээл) байгаа эсэх болон багтаамжийг шалгах
+ 
+      if (!user.membership) throw new Error("NO_MEMBERSHIP");
+      
+      const availableSessions = user.membership.totalSessions - user.membership.usedSessions;
+      if (availableSessions <= 0) throw new Error("INSUFFICIENT_SESSIONS");
+
+   
       const section = await tx.section.findUnique({
         where: { id: sectionId },
-        select: {
-          id: true,
-          capacity: true,
-          _count: { select: { bookings: true } },
-        },
+        include: { _count: { select: { bookings: true } } },
       });
 
       if (!section) throw new Error("SECTION_NOT_FOUND");
       if (section._count.bookings >= section.capacity) throw new Error("SECTION_FULL");
 
-      // 3. Өмнө нь бүртгүүлсэн эсэхийг шалгах
-      const existingBooking = await tx.booking.findFirst({
+      
+      const existingBooking = await tx.booking.findUnique({
         where: {
-          sectionId: sectionId,
-          userId: user.id, // Манай баазын CUID
+          clerkId_sectionId: { clerkId, sectionId },
         },
       });
-
       if (existingBooking) throw new Error("ALREADY_BOOKED");
 
-      // 4. Захиалга үүсгэх
+
       const newBooking = await tx.booking.create({
         data: {
+          clerkId: clerkId,
           sectionId: sectionId,
-          userId: user.id,
-          status: true,
+          status: true, 
           isTrial: false,
         },
       });
 
+  
+      await tx.membership.update({
+        where: { clerkId: clerkId },
+        data: {
+          usedSessions: { increment: 1 },
+          history: {
+            create: {
+              action: "CLASS_BOOKING",
+              change: -1,
+            },
+          },
+        },
+      });
+
       return newBooking;
+    }, {
+      maxWait: 5000, 
+      timeout: 10000, 
     });
 
-    return NextResponse.json({ message: "Амжилттай бүртгүүллээ", booking: result }, { status: 201 });
+    return NextResponse.json({ 
+      message: "Амжилттай бүртгүүллээ", 
+      booking: result 
+    }, { status: 201 });
 
   } catch (error: any) {
     console.error("BOOKING_ERROR:", error);
 
     const errorMessages: Record<string, string> = {
-      USER_NOT_FOUND: "Хэрэглэгч системд бүртгэлгүй байна",
+      USER_NOT_FOUND: "Хэрэглэгч олдсонгүй",
+      NO_MEMBERSHIP: "Танд идэвхтэй гишүүнчлэл алга",
+      INSUFFICIENT_SESSIONS: "Таны хичээлийн эрх (сесс) дууссан байна",
       SECTION_NOT_FOUND: "Хичээл олдсонгүй",
-      SECTION_FULL: "Уучлаарай, хичээлийн суудал дүүрсэн байна",
-      ALREADY_BOOKED: "Та энэ хичээлд аль хэдийн бүртгүүлсэн байна",
+      SECTION_FULL: "Уучлаарай, энэ хичээлийн суудал дүүрсэн байна",
+      ALREADY_BOOKED: "Та энэ хичээлд бүртгүүлсэн байна",
     };
 
-    const status = errorMessages[error.message] ? 400 : 500;
+    if (error.code === 'P2028') {
+      return NextResponse.json({ message: "Бааз ачаалалтай байна, түр хүлээгээд дахин оролдоно уу" }, { status: 503 });
+    }
+
     return NextResponse.json(
-      { message: errorMessages[error.message] || "Серверийн алдаа гарлаа" },
-      { status }
+      { message: errorMessages[error.message] || "Захиалга хийхэд алдаа гарлаа" },
+      { status: errorMessages[error.message] ? 400 : 500 }
     );
   }
 }
