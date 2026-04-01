@@ -37,7 +37,7 @@ export const Header = () => {
           {isLoaded && (isSignedIn ? (
             <>
               <button
-                onClick={() => router.push("/dashboard")}
+                onClick={() => router.push("/user/dashboard")}
                 className="text-slate-400 hover:text-sky-400 transition"
               >
                 Dashboard
@@ -79,7 +79,7 @@ export const Header = () => {
             {isLoaded && (isSignedIn ? (
               <>
                 <button
-                  onClick={() => router.push("/dashboard")}
+                  onClick={() => router.push("/user/dashboard")}
                   className="text-left"
                 >
                   Dashboard
