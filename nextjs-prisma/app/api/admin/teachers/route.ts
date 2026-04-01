@@ -42,3 +42,31 @@ export async function GET() {
     return NextResponse.json({ error: "Loading error" }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  req: Request,
+
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+  
+    const { id } = await params;
+
+    const deletedTeacher = await prisma.teacher.delete({
+      where: {
+        id: id,
+      },
+    });
+
+    return NextResponse.json({ 
+      message: "Amjillttai ustgagdlaa", 
+      deletedTeacher 
+    });
+  } catch (error) {
+    console.error("DELETE_ERROR:", error);
+    return NextResponse.json(
+      { error: "Ustgah yavtsad aldaa garlaa" },
+      { status: 500 }
+    );
+  }
+}
