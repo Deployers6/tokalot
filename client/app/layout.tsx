@@ -37,11 +37,11 @@
 //   );
 // }
 import type { Metadata } from "next";
-import { Geist_Mono, Manrope } from "next/font/google";
+import { Geist_Mono, Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import "./global.css";
 
-const manrope = Manrope({
+const inter = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
 });
@@ -64,7 +64,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className={`${manrope.variable} ${geistMono.variable} antialiased`}>
+        <body className={`${inter.variable} ${geistMono.variable} antialiased`}>
           {children}
         </body>
       </html>

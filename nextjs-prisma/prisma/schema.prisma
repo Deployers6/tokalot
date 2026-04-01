@@ -32,7 +32,8 @@ model User {
   updatedAt      DateTime @updatedAt
 
   bookings    Booking[]
-  memberships Membership[] 
+
+  membership  Membership? 
 }
 
 model Teacher {
@@ -76,16 +77,30 @@ model Booking {
   user    User    @relation(fields: [userId], references: [id])
   section Section @relation(fields: [sectionId], references: [id])
 }
+
 model Membership {
   id            String   @id @default(uuid())
-  userId        String
-  user          User     @relation(fields: [userId], references: [id])
-  type          String
+  
+
+  clerkId       String   @unique 
+  user          User     @relation(fields: [clerkId], references: [clerkId])
+
   startDate     DateTime
   endDate       DateTime
-  totalSessions Int
+  totalSessions Int      @default(0)
   usedSessions  Int      @default(0)
-  status        String   @default("active") 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  status        String   @default("pending")
+  
+  history       MembershipHistory[]
+}
+
+model MembershipHistory {
+  id           String     @id @default(uuid())
+  membershipId String
+  membership   Membership @relation(fields: [membershipId], references: [id])
+  
+  action       String    
+  change       Int       
+  
+  createdAt    DateTime   @default(now())
 }

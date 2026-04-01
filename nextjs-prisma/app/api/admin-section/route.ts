@@ -4,14 +4,14 @@ import prisma from "@/lib/prisma";
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const {title, level, teacherId,  startTime, endTime, capacity} = body;
+        const {title, level, teacherId,  StartTime, endTime, capacity} = body;
         
        const newSection = await prisma.section.create({
     data: {
         title,
         level,
         teacherId,
-        StartTime: new Date(startTime),
+        StartTime: new Date(StartTime),
         endTime: new Date(endTime),
         capacity: parseInt(capacity),
         status: true

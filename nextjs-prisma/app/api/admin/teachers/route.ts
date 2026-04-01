@@ -42,3 +42,27 @@ export async function GET() {
     return NextResponse.json({ error: "Loading error" }, { status: 500 });
   }
 }
+
+export async function DELETE(req: Request) {
+  try {
+  
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "ID олдсонгүй" }, { status: 400 });
+    }
+
+    const deletedTeacher = await prisma.teacher.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ 
+      message: "Амжилттай устгагдлаа", 
+      deletedTeacher 
+    });
+  } catch (error) {
+    console.error("DELETE_ERROR:", error);
+    return NextResponse.json({ error: "Серверийн алдаа" }, { status: 500 });
+  }
+}
