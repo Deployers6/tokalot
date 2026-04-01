@@ -1,113 +1,103 @@
-import { prisma } from "@/lib/prisma";
-import { clerkClient } from "@clerk/nextjs/server"; // Clerk Client нэмэх
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import prisma from "@/lib/prisma";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { sectionId, userId } = body;
+    const { sectionId, clerkId } = body;
 
-    const result = await prisma.$transaction(
-      async (tx) => {
-       
-        const client = await clerkClient();
-        let clerkUser;
-        try {
-          clerkUser = await client.users.getUser(userId);
-        } catch (e) {
-          throw new Error("CLERK_USER_NOT_FOUND");
-        }
-
-        const email = clerkUser.emailAddresses[0]?.emailAddress || "";
-        const fullName =
-          `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim();
+    if (!clerkId || !sectionId) {
+      return NextResponse.json({ message: "Мэдээлэл дутуу байна" }, { status: 400 });
+    }
 
 
-        const user = await tx.user.upsert({
-          where: {
-            clerkId: userId,
+    const result = await prisma.$transaction(async (tx) => {
+      
+   
+      const user = await tx.user.findUnique({
+        where: { clerkId: clerkId },
+        include: { membership: true }
+      });
+
+      if (!user) throw new Error("USER_NOT_FOUND");
+
+ 
+      if (!user.membership) throw new Error("NO_MEMBERSHIP");
+      
+      const availableSessions = user.membership.totalSessions - user.membership.usedSessions;
+      if (availableSessions <= 0) throw new Error("INSUFFICIENT_SESSIONS");
+
+   
+      const section = await tx.section.findUnique({
+        where: { id: sectionId },
+        include: { _count: { select: { bookings: true } } },
+      });
+
+      if (!section) throw new Error("SECTION_NOT_FOUND");
+      if (section._count.bookings >= section.capacity) throw new Error("SECTION_FULL");
+
+      
+      const existingBooking = await tx.booking.findUnique({
+        where: {
+          clerkId_sectionId: { clerkId, sectionId },
+        },
+      });
+      if (existingBooking) throw new Error("ALREADY_BOOKED");
+
+
+      const newBooking = await tx.booking.create({
+        data: {
+          clerkId: clerkId,
+          sectionId: sectionId,
+          status: true, 
+          isTrial: false,
+        },
+      });
+
+  
+      await tx.membership.update({
+        where: { clerkId: clerkId },
+        data: {
+          usedSessions: { increment: 1 },
+          history: {
+            create: {
+              action: "CLASS_BOOKING",
+              change: -1,
+            },
           },
-          update: {
-            email: email,
-            fullName: fullName,
-          },
-          create: {
-            clerkId: userId,
-            email: email,
-            fullName: fullName || "Unknown User",
-          },
-        });
+        },
+      });
 
-        // 3. SECTION ШАЛГАХ
-        const section = await tx.section.findUnique({
-          where: { id: sectionId },
-          select: {
-            id: true,
-            capacity: true,
-            _count: { select: { bookings: true } },
-          },
-        });
+      return newBooking;
+    }, {
+      maxWait: 5000, 
+      timeout: 10000, 
+    });
 
-        if (!section) throw new Error("SECTION_NOT_FOUND");
-        if (section._count.bookings >= section.capacity)
-          throw new Error("SECTION_FULL");
+    return NextResponse.json({ 
+      message: "Амжилттай бүртгүүллээ", 
+      booking: result 
+    }, { status: 201 });
 
-        // 4. ДАВХАР ЗАХИАЛГА ШАЛГАХ
-        const existingBooking = await tx.booking.findFirst({
-          where: {
-            sectionId,
-            userId: user.id, // Баазын дотоод CUID
-          },
-        });
-
-        if (existingBooking) throw new Error("ALREADY_BOOKED");
-
-        // 5. ЗАХИАЛГА ҮҮСГЭХ
-        return await tx.booking.create({
-          data: {
-            sectionId,
-            userId: user.id, // User-ийн id (CUID)-аар холбоно
-            status: true,
-            isTrial: false,
-          },
-        });
-      },
-      {
-        maxWait: 10000,
-        timeout: 20000,
-      },
-    );
-
-    return NextResponse.json(
-      { message: "Амжилттай захиалагдлаа", booking: result },
-      { status: 201 },
-    );
   } catch (error: any) {
     console.error("BOOKING_ERROR:", error);
 
     const errorMessages: Record<string, string> = {
-      CLERK_USER_NOT_FOUND: "Clerk систем дээр хэрэглэгч олдсонгүй",
+      USER_NOT_FOUND: "Хэрэглэгч олдсонгүй",
+      NO_MEMBERSHIP: "Танд идэвхтэй гишүүнчлэл алга",
+      INSUFFICIENT_SESSIONS: "Таны хичээлийн эрх (сесс) дууссан байна",
       SECTION_NOT_FOUND: "Хичээл олдсонгүй",
-      SECTION_FULL: "Суудал дүүрсэн байна",
-      ALREADY_BOOKED: "Та аль хэдийн бүртгүүлсэн байна",
+      SECTION_FULL: "Уучлаарай, энэ хичээлийн суудал дүүрсэн байна",
+      ALREADY_BOOKED: "Та энэ хичээлд бүртгүүлсэн байна",
     };
 
-    const status = errorMessages[error.message] ? 400 : 500;
-    const message =
-      errorMessages[error.message] || "Серверийн алдаа: " + error.message;
+    if (error.code === 'P2028') {
+      return NextResponse.json({ message: "Бааз ачаалалтай байна, түр хүлээгээд дахин оролдоно уу" }, { status: 503 });
+    }
 
-    return NextResponse.json({ message }, { status });
+    return NextResponse.json(
+      { message: errorMessages[error.message] || "Захиалга хийхэд алдаа гарлаа" },
+      { status: errorMessages[error.message] ? 400 : 500 }
+    );
   }
 }
-
-
-
-
-
-
-
-
-
-            
-                         

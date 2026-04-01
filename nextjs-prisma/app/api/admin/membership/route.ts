@@ -1,23 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
-
 export async function GET(req: NextRequest) {
-  
   const clerkId = req.headers.get("x-user-id");
+  const email = req.headers.get("x-user-email");
+  const fullName = req.headers.get("x-user-name") || "Member";
 
   if (!clerkId || clerkId === "null") {
     return NextResponse.json({ error: "clerkId олдсонгүй" }, { status: 400 });
   }
 
   try {
+  
+    await prisma.user.upsert({
+      where: { clerkId: clerkId },
+      update: {}, // Байвал юу ч өөрчлөхгүй
+      create: {
+        clerkId: clerkId,
+        email: email || `user_${clerkId}@temporary.com`, // Email заавал байх ёстой тул хоосон бол түр утга өгнө
+        fullName: fullName,
+      },
+    });
+
+    // 2. АЛХАМ: Одоо User баталгаатай байгаа тул Membership-ийг авна эсвэл үүсгэнэ
     const membership = await prisma.membership.upsert({
       where: { clerkId: clerkId },
       update: {}, 
       create: {
         clerkId: clerkId,
         startDate: new Date(),
-        endDate: new Date(),
+        endDate: new Date(), // Анхны утгаар өнөөдрийг өглөө
         totalSessions: 0,
         usedSessions: 0,
         status: "pending",
@@ -31,60 +43,95 @@ export async function GET(req: NextRequest) {
     
   } catch (error: any) {
     console.error("GET Membership Error:", error);
+    
     return NextResponse.json(
       { 
         error: "Дата авахад алдаа гарлаа", 
-        details: error.message
+        details: error.message,
+        code: error.code 
       },
       { status: 500 },
     );
   }
 }
 
-export async function PATCH(req: NextRequest) {
-  const clerkId = req.headers.get("x-user-id");
 
-  if (!clerkId) {
-    return NextResponse.json({ error: "Header-т x-user-id алга" }, { status: 400 });
+
+
+
+
+export async function PATCH(req: NextRequest) {
+
+  const rawId = req.headers.get("x-user-id");
+  const clerkId = rawId?.trim();
+
+  if (!clerkId || clerkId === "null") {
+    return NextResponse.json({ error: "clerkId олдсонгүй" }, { status: 400 });
   }
 
   try {
     const body = await req.json();
-    
-    const updatedMembership = await prisma.membership.update({
-      where: { clerkId: clerkId },
-      data: {
 
+
+    const current = await prisma.membership.findUnique({
+      where: { clerkId: clerkId },
+    });
+
+    const updatedMembership = await prisma.membership.upsert({
+      where: { clerkId: clerkId },
+      update: {
+       
         ...(body.totalSessions !== undefined && { totalSessions: Number(body.totalSessions) }),
         ...(body.usedSessions !== undefined && { usedSessions: Number(body.usedSessions) }),
         ...(body.startDate && { startDate: new Date(body.startDate) }),
         ...(body.endDate && { endDate: new Date(body.endDate) }),
         ...(body.status && { status: body.status }),
-
-       
+        
+        
         history: {
           create: {
-            action: "ADMIN_UPDATE",
-            change: body.totalSessions !== undefined ? Number(body.totalSessions) : 0,
+            action: body.action || "ADMIN_UPDATE",
+            // Шинэ утгаас хуучин утгыг хасаж зөрүүг (change) хадгална
+            change: body.totalSessions !== undefined 
+              ? (Number(body.totalSessions) - (current?.totalSessions || 0)) 
+              : 0,
           },
         },
+      },
+      create: {
+        // Хэрэв дата олдохгүй бол шинээр үүсгэх fallback
+        clerkId: clerkId,
+        startDate: body.startDate ? new Date(body.startDate) : new Date(),
+        endDate: body.endDate ? new Date(body.endDate) : new Date(),
+        totalSessions: Number(body.totalSessions) || 0,
+        usedSessions: Number(body.usedSessions) || 0,
+        status: body.status || "pending",
+        history: {
+          create: {
+            action: "INITIAL_CREATE_VIA_PATCH",
+            change: Number(body.totalSessions) || 0,
+          },
+        },
+      },
+      include: {
+        history: true,
       },
     });
 
     return NextResponse.json(updatedMembership);
+
   } catch (error: any) {
-    console.error("PATCH Error:", error);
+    console.error("PATCH Error Details:", error);
     return NextResponse.json(
       { 
         error: "Шинэчлэхэд алдаа гарлаа", 
-        message: error.message, 
+        details: error.message,
         prismaCode: error.code 
       },
       { status: 500 }
     );
   }
 }
-
 
 export async function DELETE(req: NextRequest) {
   const clerkId = req.headers.get("x-user-id");
@@ -100,7 +147,7 @@ export async function DELETE(req: NextRequest) {
 
     if (membership) {
       await prisma.membershipHistory.deleteMany({
-        where: { membershipId: membership.id }
+        where: { clerkId: membership.clerkId }
       });
 
  
