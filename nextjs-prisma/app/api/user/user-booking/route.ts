@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
 
     const result = await prisma.$transaction(
       async (tx) => {
-        // 1. CLERK-ЭЭС МЭДЭЭЛЭЛ ТАТАХ (Email болон Name авахын тулд)
+       
         const client = await clerkClient();
         let clerkUser;
         try {
@@ -23,8 +23,7 @@ export async function POST(req: NextRequest) {
         const fullName =
           `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim();
 
-        // 2. USER SYNC (Upsert)
-        // Таны моделд email, fullName заавал байх ёстой тул энд нэмлээ
+
         const user = await tx.user.upsert({
           where: {
             clerkId: userId,
@@ -101,3 +100,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message }, { status });
   }
 }
+
+
+
+
+
+
+
+
+
+            
+                         

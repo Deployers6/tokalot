@@ -43,10 +43,6 @@ export async function GET(
   }
 }
 
-
-
-
-
 export async function PATCH(req: NextRequest) {
   const clerkId = req.headers.get("x-user-id");
 
