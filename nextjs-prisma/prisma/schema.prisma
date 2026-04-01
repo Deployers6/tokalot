@@ -20,8 +20,8 @@ enum Level {
 
 
 model User {
-  id             String   @id @default(cuid())
-  clerkId        String   @unique
+  id             String   @id @default(cuid()) 
+  clerkId        String   @unique              // Clerk-ээс ирэх 'user_...' ID
   email          String   @unique
   fullName       String
   phoneNumber    String?
@@ -31,9 +31,12 @@ model User {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
+  // Relations
   bookings    Booking[]
-
   membership  Membership? 
+
+  // ClerkId-аар хайлт хийхэд зориулсан индекс
+  @@index([clerkId]) 
 }
 
 model Teacher {
@@ -67,15 +70,21 @@ model Section {
 
 model Booking {
   id        String   @id @default(cuid())
-  userId    String
+  clerkId   String   // userId-ийн оронд шууд clerkId хадгална
   sectionId String
   status    Boolean  @default(false)
   isTrial   Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user    User    @relation(fields: [userId], references: [id])
-  section Section @relation(fields: [sectionId], references: [id])
+  // Холболтыг хийхдээ User-ийн id-г биш, clerkId-г нь reference (лавлагаа) болгож авна
+  user    User    @relation(fields: [clerkId], references: [clerkId], onDelete: Cascade)
+  section Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  // Давхар бүртгэлээс сэргийлэх (clerkId болон sectionId-аар)
+  @@unique([clerkId, sectionId])
+  @@index([clerkId])
+  @@index([sectionId])
 }
 
 model Membership {

@@ -1,113 +1,75 @@
 import { prisma } from "@/lib/prisma";
-import { clerkClient } from "@clerk/nextjs/server"; // Clerk Client нэмэх
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { sectionId, userId } = body;
+    const { sectionId, clerkId } = body; // Clerk-ээс ирсэн user ID
 
-    const result = await prisma.$transaction(
-      async (tx) => {
-       
-        const client = await clerkClient();
-        let clerkUser;
-        try {
-          clerkUser = await client.users.getUser(userId);
-        } catch (e) {
-          throw new Error("CLERK_USER_NOT_FOUND");
-        }
+    if (!clerkId || !sectionId) {
+      return NextResponse.json({ error: "clerkId эсвэл sectionId дутуу байна" }, { status: 400 });
+    }
 
-        const email = clerkUser.emailAddresses[0]?.emailAddress || "";
-        const fullName =
-          `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim();
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. ClerkId-аар манай бааз дахь User-ийг олох (эсвэл үүсгэх)
+      const user = await tx.user.findUnique({
+        where: { clerkId: clerkId },
+      });
 
+      if (!user) throw new Error("USER_NOT_FOUND");
 
-        const user = await tx.user.upsert({
-          where: {
-            clerkId: userId,
-          },
-          update: {
-            email: email,
-            fullName: fullName,
-          },
-          create: {
-            clerkId: userId,
-            email: email,
-            fullName: fullName || "Unknown User",
-          },
-        });
+      // 2. Section (Хичээл) байгаа эсэх болон багтаамжийг шалгах
+      const section = await tx.section.findUnique({
+        where: { id: sectionId },
+        select: {
+          id: true,
+          capacity: true,
+          _count: { select: { bookings: true } },
+        },
+      });
 
-        // 3. SECTION ШАЛГАХ
-        const section = await tx.section.findUnique({
-          where: { id: sectionId },
-          select: {
-            id: true,
-            capacity: true,
-            _count: { select: { bookings: true } },
-          },
-        });
+      if (!section) throw new Error("SECTION_NOT_FOUND");
+      if (section._count.bookings >= section.capacity) throw new Error("SECTION_FULL");
 
-        if (!section) throw new Error("SECTION_NOT_FOUND");
-        if (section._count.bookings >= section.capacity)
-          throw new Error("SECTION_FULL");
+      // 3. Өмнө нь бүртгүүлсэн эсэхийг шалгах
+      const existingBooking = await tx.booking.findFirst({
+        where: {
+          sectionId: sectionId,
+          userId: user.id, // Манай баазын CUID
+        },
+      });
 
-        // 4. ДАВХАР ЗАХИАЛГА ШАЛГАХ
-        const existingBooking = await tx.booking.findFirst({
-          where: {
-            sectionId,
-            userId: user.id, // Баазын дотоод CUID
-          },
-        });
+      if (existingBooking) throw new Error("ALREADY_BOOKED");
 
-        if (existingBooking) throw new Error("ALREADY_BOOKED");
+      // 4. Захиалга үүсгэх
+      const newBooking = await tx.booking.create({
+        data: {
+          sectionId: sectionId,
+          userId: user.id,
+          status: true,
+          isTrial: false,
+        },
+      });
 
-        // 5. ЗАХИАЛГА ҮҮСГЭХ
-        return await tx.booking.create({
-          data: {
-            sectionId,
-            userId: user.id, // User-ийн id (CUID)-аар холбоно
-            status: true,
-            isTrial: false,
-          },
-        });
-      },
-      {
-        maxWait: 10000,
-        timeout: 20000,
-      },
-    );
+      return newBooking;
+    });
 
-    return NextResponse.json(
-      { message: "Амжилттай захиалагдлаа", booking: result },
-      { status: 201 },
-    );
+    return NextResponse.json({ message: "Амжилттай бүртгүүллээ", booking: result }, { status: 201 });
+
   } catch (error: any) {
     console.error("BOOKING_ERROR:", error);
 
     const errorMessages: Record<string, string> = {
-      CLERK_USER_NOT_FOUND: "Clerk систем дээр хэрэглэгч олдсонгүй",
+      USER_NOT_FOUND: "Хэрэглэгч системд бүртгэлгүй байна",
       SECTION_NOT_FOUND: "Хичээл олдсонгүй",
-      SECTION_FULL: "Суудал дүүрсэн байна",
-      ALREADY_BOOKED: "Та аль хэдийн бүртгүүлсэн байна",
+      SECTION_FULL: "Уучлаарай, хичээлийн суудал дүүрсэн байна",
+      ALREADY_BOOKED: "Та энэ хичээлд аль хэдийн бүртгүүлсэн байна",
     };
 
     const status = errorMessages[error.message] ? 400 : 500;
-    const message =
-      errorMessages[error.message] || "Серверийн алдаа: " + error.message;
-
-    return NextResponse.json({ message }, { status });
+    return NextResponse.json(
+      { message: errorMessages[error.message] || "Серверийн алдаа гарлаа" },
+      { status }
+    );
   }
 }
-
-
-
-
-
-
-
-
-
-            
-                         
