@@ -43,30 +43,26 @@ export async function GET() {
   }
 }
 
-export async function DELETE(
-  req: Request,
-
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(req: Request) {
   try {
   
-    const { id } = await params;
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "ID олдсонгүй" }, { status: 400 });
+    }
 
     const deletedTeacher = await prisma.teacher.delete({
-      where: {
-        id: id,
-      },
+      where: { id },
     });
 
     return NextResponse.json({ 
-      message: "Amjillttai ustgagdlaa", 
+      message: "Амжилттай устгагдлаа", 
       deletedTeacher 
     });
   } catch (error) {
     console.error("DELETE_ERROR:", error);
-    return NextResponse.json(
-      { error: "Ustgah yavtsad aldaa garlaa" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Серверийн алдаа" }, { status: 500 });
   }
 }
