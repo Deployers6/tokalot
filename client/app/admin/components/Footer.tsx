@@ -5,8 +5,8 @@ import { GraduationCap, Users, CalendarRange } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 const tabs = [
-  { label: "USERS", icon: Users, href: "/admin/users" },
-  { label: "TEACHER", icon: GraduationCap, href: "/admin/teachers" },
+  { label: "MEMBERS", icon: Users, href: "/admin/members" },
+  { label: "TEACHERS", icon: GraduationCap, href: "/admin/teachers" },
   { label: "SESSIONS", icon: CalendarRange, href: "/admin" },
 ];
 

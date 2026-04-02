@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { Search, Calendar, Pencil } from "lucide-react";
-import { UserRoundPlus } from "lucide-react";
+import { UserPlus } from "lucide-react";
 
 const mockStudents = [
   {
@@ -88,7 +88,7 @@ const User = () => {
 
       <div className="absolute bottom-24 right-5">
         <button className="bg-gray-900 text-white h-[64px] w-[64px] rounded-2xl flex items-center justify-center shadow-lg">
-          <UserRoundPlus className="h-6 w-6" />
+          <UserPlus className="h-6 w-6" />
         </button>
       </div>
 
