@@ -1,6 +1,24 @@
-import { clerkMiddleware } from '@clerk/nextjs/server';
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
 
-export default clerkMiddleware();
+// 1. Админ замуудыг тодорхойлох (Жишээ нь: /admin/dashboard, /admin/users гэх мэт)
+const isAdminRoute = createRouteMatcher(['/admin(.*)']);
+
+export default clerkMiddleware(async (auth, req) => {
+  // 2. Хэрэв хэрэглэгч админ зам руу орох гэж байвал
+  if (isAdminRoute(req)) {
+    const { sessionClaims } = await auth();
+
+    // 3. Role-ийг шалгах (publicMetadata.role)
+    const role = sessionClaims?.metadata.role;
+
+    if (role !== 'ADMIN') {
+      // Админ биш бол нүүр хуудас эсвэл 404 рүү шилжүүлнэ
+      const url = new URL('/', req.url);
+      return NextResponse.redirect(url);
+    }
+  }
+});
 
 export const config = {
   matcher: [

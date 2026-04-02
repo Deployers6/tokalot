@@ -18,7 +18,11 @@ enum Level {
   Intermediate
   Advanced
 }
-
+enum MembershipStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+}
 model User {
   clerkId        String   @id
   email          String   @unique
@@ -86,17 +90,21 @@ model Membership {
   clerkId String @id
   user    User   @relation(fields: [clerkId], references: [clerkId])
 
-  startDate     DateTime
-  endDate       DateTime
+  // Анх Pending байхад хугацаа тодорхойгүй байж болох тул DateTime? (Optional) болгохыг зөвлөе
+  startDate     DateTime? 
+  endDate       DateTime? 
+  
   totalSessions Int      @default(0)
   usedSessions  Int      @default(0)
-  status        String   @default("pending")
+  
+  // Энд String-ийн оронд enum-аа зааж өгнө
+  status        MembershipStatus @default(PENDING)
 
   history MembershipHistory[]
 }
 
 model MembershipHistory {
-  id           String     @id @default(cuid()) // uuid() эсвэл cuid()
+  id           String     @id @default(cuid())
   clerkId      String     
   membership   Membership @relation(fields: [clerkId], references: [clerkId], onDelete: Cascade)
 
