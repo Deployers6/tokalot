@@ -651,7 +651,6 @@
 //FINAL VERSION WITH ALL FEATURES, HOPE IT WORKS
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { useAuth } from "@clerk/nextjs";
 import {
   CalendarIcon,
   Loader2,
@@ -714,8 +713,6 @@ function isoToTimeInput(iso: string) {
   }
 }
 
-// ── Edit Form ──────────────────────────────────────────────────────────────
-
 function EditForm({
   section,
   teachers,
@@ -729,7 +726,6 @@ function EditForm({
   onClose: () => void;
   onSuccess: () => void;
 }) {
-  const { getToken } = useAuth();
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
@@ -754,23 +750,27 @@ function EditForm({
     setLoading(true);
     setError("");
     try {
-      const token = await getToken();
+      // const payload = {
+      //   title: form.title,
+      //   level: section.level || "Beginner",
+      //   teacherId: form.teacherId,
+      //   StartTime: `${form.sessionDate}T${form.startTime}:00`,
+      //   endTime: `${form.sessionDate}T${form.endTime}:00`,
+      //   capacity: Number(form.capacity),
+      // };
       const payload = {
         title: form.title,
         level: section.level || "Beginner",
         teacherId: form.teacherId,
-        StartTime: `${form.sessionDate}T${form.startTime}:00`,
-        endTime: `${form.sessionDate}T${form.endTime}:00`,
+        startTime: `${form.sessionDate}T${form.startTime}:00`, // жижиг үсэг
+        endTime: `${form.sessionDate}T${form.endTime}:00`, // жижиг үсэг
         capacity: Number(form.capacity),
       };
       const res = await fetch(
-        `${BACKEND_URL}/api/admin-section/${section.id}`,
+        `${BACKEND_URL}/api/admin/patch.session/${section.id}`,
         {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         },
       );
@@ -793,14 +793,10 @@ function EditForm({
     setDeleting(true);
     setError("");
     try {
-      const token = await getToken();
       const res = await fetch(
-        `${BACKEND_URL}/api/admin-section/${section.id}`,
+        `${BACKEND_URL}/api/admin/delete.session/${section.id}`,
         {
           method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
         },
       );
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
@@ -945,8 +941,6 @@ function EditForm({
   );
 }
 
-// ── Session Card ───────────────────────────────────────────────────────────
-
 function SessionCard({
   section,
   onEdit,
@@ -1021,10 +1015,7 @@ function SessionCard({
   );
 }
 
-// ── Main Session Component ─────────────────────────────────────────────────
-
 export default function Session() {
-  const { getToken } = useAuth();
   const [sections, setSections] = useState<Section[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loadingSections, setLoadingSections] = useState(true);
@@ -1054,10 +1045,7 @@ export default function Session() {
   const fetchSections = async () => {
     try {
       setLoadingSections(true);
-      const token = await getToken();
-      const res = await fetch(`${BACKEND_URL}/api/admin-section`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(`${BACKEND_URL}/api/admin-section`);
       if (!res.ok) throw new Error("failed");
       const data = await res.json();
       setSections(Array.isArray(data) ? data : []);
@@ -1071,10 +1059,7 @@ export default function Session() {
   const fetchTeachers = async () => {
     try {
       setLoadingTeachers(true);
-      const token = await getToken();
-      const res = await fetch(`${BACKEND_URL}/api/admin/teachers`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(`${BACKEND_URL}/api/admin/teachers`);
       if (!res.ok) throw new Error("failed");
       const data = await res.json();
       setTeachers(Array.isArray(data) ? data : []);
