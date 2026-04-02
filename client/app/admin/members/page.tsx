@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { Search, Calendar, Pencil } from "lucide-react";
-import { UserRoundPlus } from "lucide-react";
+import { UserPlus } from "lucide-react";
 
 const mockStudents = [
   {
@@ -32,7 +32,6 @@ const User = () => {
       <Header />
 
       <div className="flex-1 overflow-y-auto px-5 pt-5 pb-28">
-        {/* Search */}
         <div className="relative mb-6">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
@@ -44,7 +43,6 @@ const User = () => {
           />
         </div>
 
-        {/* Title + total badge */}
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-extrabold text-gray-900">
             Student Directory
@@ -54,7 +52,6 @@ const User = () => {
           </span>
         </div>
 
-        {/* Student list */}
         <div className="flex flex-col gap-3">
           {filtered.map((student) => (
             <div
@@ -89,10 +86,9 @@ const User = () => {
         </div>
       </div>
 
-      {/* Floating add button */}
       <div className="absolute bottom-24 right-5">
         <button className="bg-gray-900 text-white h-[64px] w-[64px] rounded-2xl flex items-center justify-center shadow-lg">
-          <UserRoundPlus className="h-6 w-6" />
+          <UserPlus className="h-6 w-6" />
         </button>
       </div>
 
