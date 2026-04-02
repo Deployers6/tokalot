@@ -5,7 +5,7 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> } // 1. Next.js 15-д params нь Promise байдаг
 ) {
-  // 2. Params-ыг заавал await хийж авна
+ 
   const resolvedParams = await params;
   const bookingId = resolvedParams.id;
   
@@ -49,14 +49,14 @@ export async function DELETE(
       );
     }
 
-    // 6. TRANSACTION: Захиалгыг устгаад, сессийг нь буцаан олгох (+1)
+
     await prisma.$transaction(async (tx) => {
-      // Захиалгыг устгах
+     
       await tx.booking.delete({
         where: { id: bookingId },
       });
 
-      // Хэрэглэгчийн ашигласан сессээс 1-ийг хасах (Refund)
+   
       await tx.membership.update({
         where: { clerkId: clerkId },
         data: {
@@ -64,7 +64,7 @@ export async function DELETE(
           history: {
             create: {
               action: "CANCEL_REFUND",
-              change: 1, // Түүх дээр +1 сесс буцаж ирснийг тэмдэглэнэ
+              change: 1, 
             },
           },
         },
