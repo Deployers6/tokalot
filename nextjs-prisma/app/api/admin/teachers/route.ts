@@ -4,12 +4,14 @@ import prisma from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
-    // const { sessionClaims } = await auth();
+    const { sessionClaims } = await auth();
 
 
-    // if (sessionClaims?.metadata?.role !== "ADMIN") {
-    //   return NextResponse.json({ error: "Зөвшөөрөлгүй хандалт" }, { status: 403 });
-    // }
+const role = sessionClaims?.metadata?.role || req.headers.get("x-role");
+
+if (role !== "ADMIN") {
+  return NextResponse.json({ error: "Зөвшөөрөлгүй хандалт" }, { status: 403 });
+}
 
     const body = await req.json();
     const { fullName, bio, experience, imageUrl } = body;

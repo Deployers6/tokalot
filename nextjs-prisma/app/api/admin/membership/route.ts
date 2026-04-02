@@ -2,56 +2,30 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
+  // Postman-д зориулж Header-ээс, эсвэл Clerk-ээс ID авна
   const clerkId = req.headers.get("x-user-id");
-  const email = req.headers.get("x-user-email");
-  const fullName = req.headers.get("x-user-name") || "Member";
 
   if (!clerkId || clerkId === "null") {
     return NextResponse.json({ error: "clerkId олдсонгүй" }, { status: 400 });
   }
 
   try {
-  
-    await prisma.user.upsert({
+    // Зөвхөн байгаа датаг хайж олно (Шинээр үүсгэхгүй)
+    const membership = await prisma.membership.findUnique({
       where: { clerkId: clerkId },
-      update: {}, // Байвал юу ч өөрчлөхгүй
-      create: {
-        clerkId: clerkId,
-        email: email || `user_${clerkId}@temporary.com`, // Email заавал байх ёстой тул хоосон бол түр утга өгнө
-        fullName: fullName,
-      },
-    });
-
-    // 2. АЛХАМ: Одоо User баталгаатай байгаа тул Membership-ийг авна эсвэл үүсгэнэ
-    const membership = await prisma.membership.upsert({
-      where: { clerkId: clerkId },
-      update: {}, 
-      create: {
-        clerkId: clerkId,
-        startDate: new Date(),
-        endDate: new Date(), // Анхны утгаар өнөөдрийг өглөө
-        totalSessions: 0,
-        usedSessions: 0,
-        status: "pending",
-      },
       include: {
-        history: true,
+        history: {
+          orderBy: { createdAt: 'desc' } // Хамгийн сүүлийн түүхийг эхэнд нь
+        },
       },
     });
 
+    // Хэрэв байхгүй бол 200 статус бүхий null буцаана (Frontend дээр "Member биш" гэж харуулна)
     return NextResponse.json(membership); 
     
   } catch (error: any) {
     console.error("GET Membership Error:", error);
-    
-    return NextResponse.json(
-      { 
-        error: "Дата авахад алдаа гарлаа", 
-        details: error.message,
-        code: error.code 
-      },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Дата авахад алдаа гарлаа" }, { status: 500 });
   }
 }
 
