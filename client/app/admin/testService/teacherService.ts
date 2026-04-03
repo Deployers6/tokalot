@@ -15,6 +15,6 @@ export const teacherService = {
   },
 
   updateTeacher: async (id: string, data: any) => {
-    return await updateTeacher(id, data);
+    return await updateTeacher(Number(id), data);
   },
 };
