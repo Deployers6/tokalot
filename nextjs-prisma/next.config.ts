@@ -16,11 +16,16 @@ const nextConfig: NextConfig = {
             key: "Access-Control-Allow-Methods",
             value: "GET, POST, PUT, PATCH, DELETE, OPTIONS",
           },
+
+          {
+            key: "Access-Control-Allow-Headers",
+            value: "Content-Type, Authorization, x-admin-id",
+          },
         ],
       },
     ];
   },
-  // crossOrigin: "anonymous",
+  crossOrigin: "anonymous",
 };
 
 export default nextConfig;
