@@ -1,48 +1,58 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
-import { Search, Pencil, UserPlus } from "lucide-react";
-
+import { Search, Pencil, UserPlus, Trash2 } from "lucide-react";
 import Link from "next/link";
-
 import Header from "../components/Header";
-
 import Footer from "../components/Footer";
+import Image from "next/image";
 
-import { getTeachers } from "../testMock/mockTeachers";
+interface Teacher {
+  id: string;
+  fullName: string;
+  bio: string;
+  experience: string;
+  imageUrl: string;
+}
 
 export default function TeachersPage() {
-  const [teachersData, setTeachersData] = useState<any[]>([]);
-
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [query, setQuery] = useState("");
 
+  const fetchData = async () => {
+    const res = await fetch("/api/teachers");
+    const data = await res.json();
+    setTeachers(data);
+  };
+
   useEffect(() => {
-    getTeachers().then(setTeachersData);
+    fetchData();
   }, []);
 
-  const filteredTeachers = teachersData.filter((teacher) => {
-    const search = query.toLowerCase();
+  const handleDelete = async (id: string) => {
+    if (!confirm("Энэ багшийг устгах уу?")) return;
+    await fetch(`/api/teachers?id=${id}`, { method: "DELETE" });
+    await fetchData();
+  };
 
+  const filteredTeachers = teachers.filter((t) => {
+    const q = query.toLowerCase();
     return (
-      teacher.name?.toLowerCase().includes(search) ||
-      teacher.subject?.toLowerCase().includes(search) ||
-      teacher.level?.toLowerCase().includes(search) ||
-      teacher.tags?.some((tag: string) => tag.toLowerCase().includes(search))
+      t.fullName.toLowerCase().includes(q) ||
+      t.experience.toLowerCase().includes(q) ||
+      t.bio.toLowerCase().includes(q)
     );
   });
 
   return (
     <div className="min-h-screen bg-gray-100 pb-24">
       <Header />
-
       <div className="p-6">
         <div className="flex justify-between items-center">
           <div>
             <p className="text-sm text-gray-500">FACULTY DIRECTORY</p>
             <h2 className="text-3xl font-bold">Teachers</h2>
           </div>
-
           <Link href="/admin/add-new-teacher">
             <button className="w-[64px] h-[58px] bg-black text-white rounded-xl flex items-center justify-center shadow">
               <UserPlus />
@@ -52,9 +62,9 @@ export default function TeachersPage() {
 
         <div className="grid gap-4 mt-6">
           <div className="bg-[#EFEFEF] p-6 rounded-2xl shadow">
-            <p className="text-3xl font-bold">{teachersData.length}</p>
+            <p className="text-3xl font-bold">{teachers.length}</p>
             <p className="text-sm tracking-widest text-gray-600">
-              ACTIVE TEACHER
+              ACTIVE TEACHERS
             </p>
           </div>
         </div>
@@ -63,7 +73,7 @@ export default function TeachersPage() {
           <Search className="absolute left-4 top-3 text-gray-400" />
           <input
             type="text"
-            placeholder="Search by name or specialty..."
+            placeholder="Search by name or level..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="w-full pl-12 pr-4 py-3 rounded-2xl bg-[#EFEFEF] outline-none shadow text-sm"
@@ -71,43 +81,45 @@ export default function TeachersPage() {
         </div>
 
         <div className="mt-6 space-y-4">
-          {filteredTeachers.map((teacher, i) => (
+          {filteredTeachers.map((teacher) => (
             <div
-              key={i}
+              key={teacher.id}
               className="bg-white rounded-2xl p-4 flex items-center justify-between shadow"
             >
               <div className="flex items-center gap-4">
-                <img className="w-14 h-14 rounded-xl object-cover" />
+                <Image
+                  src={teacher.imageUrl || "/default-profile.png"}
+                  alt={teacher.fullName}
+                  width={56}
+                  height={56}
+                  className="w-14 h-14 rounded-xl object-cover"
+                />
                 <div>
-                  <h3 className="font-semibold text-lg">{teacher.name}</h3>
-                  <p className="text-cyan-600 text-sm">{teacher.subject}</p>
-                  <p className="text-xs text-gray-500 mt-1">{teacher.level}</p>
-                  <div className="flex gap-2 mt-2 flex-wrap">
-                    {teacher.tags.map((tag: string, idx: number) => (
-                      <span
-                        key={idx}
-                        className="text-xs bg-[#EFEFEF] px-3 py-1 rounded-full"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
+                  <h3 className="font-semibold text-lg">{teacher.fullName}</h3>
+                  <p className="text-cyan-600 text-sm">{teacher.experience}</p>
+                  <p className="text-xs text-gray-500 mt-1">{teacher.bio}</p>
                 </div>
               </div>
-              <Link href="/admin/edit-teacher-profile">
-                <button className="bg-[#DAF2F9] p-3 rounded-xl hover:bg-blue-200">
-                  <Pencil size={16} />
+              <div className="flex gap-2">
+                <Link href={`/admin/edit-teacher/${teacher.id}`}>
+                  <button className="bg-[#DAF2F9] p-3 rounded-xl hover:bg-blue-200">
+                    <Pencil size={16} />
+                  </button>
+                </Link>
+                <button
+                  onClick={() => handleDelete(teacher.id)}
+                  className="bg-red-100 p-3 rounded-xl hover:bg-red-200"
+                >
+                  <Trash2 size={16} />
                 </button>
-              </Link>
+              </div>
             </div>
           ))}
-
           {filteredTeachers.length === 0 && (
             <p className="text-center text-gray-400 mt-10">No teachers found</p>
           )}
         </div>
       </div>
-
       <Footer />
     </div>
   );

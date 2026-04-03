@@ -412,7 +412,7 @@ function EditForm({
         className="bg-[#20BEF9] text-white font-extrabold tracking-widest py-4 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2"
       >
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-        {loading ? "ХАДГАЛЖ БУЙ..." : "SAVE SESSION"}
+        {loading ? "SAVING..." : "SAVE SESSION"}
       </button>
 
       <button
@@ -422,7 +422,7 @@ function EditForm({
         className="border-2 border-red-400 text-red-500 font-extrabold tracking-widest py-4 rounded-xl flex items-center justify-center gap-2 bg-white"
       >
         {deleting && <Loader2 className="h-4 w-4 animate-spin" />}
-        {deleting ? "УСТГАЖ БУЙ..." : "DELETE SESSION"}
+        {deleting ? "DELETING..." : "DELETE SESSION"}
       </button>
     </form>
   );
@@ -453,7 +453,7 @@ function SessionCard({
       </p>
       <div className="flex items-start justify-between gap-2">
         <h3
-          className={`font-extrabold text-base leading-tight ${cancelled ? "text-gray-400" : "text-gray-800"}`}
+          className={`font-extrabold text-[20px] leading-tight ${cancelled ? "text-gray-400" : "text-gray-800"}`}
         >
           {section.title}
         </h3>
@@ -468,6 +468,7 @@ function SessionCard({
           </button>
         )}
       </div>
+
       <div className="flex items-center gap-4 mt-2">
         <span className="flex items-center gap-1 text-sm text-gray-500">
           <User className="h-3.5 w-3.5" />
@@ -478,12 +479,14 @@ function SessionCard({
           {enrolled}/{cap} Seats
         </span>
       </div>
+
       <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{ width: `${fillPct}%`, backgroundColor: color }}
         />
       </div>
+
       {fullyBooked && (
         <div className="mt-2">
           <span className="text-xs font-extrabold tracking-widest px-3 py-1 rounded-full border border-amber-300 text-amber-600 bg-amber-50">
@@ -491,6 +494,7 @@ function SessionCard({
           </span>
         </div>
       )}
+
       {cancelled && (
         <div className="mt-2 flex items-center gap-1">
           <span className="text-red-400 text-sm">⊗</span>
