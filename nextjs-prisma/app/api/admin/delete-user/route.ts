@@ -1,34 +1,54 @@
 import { clerkClient } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 
-// ЭНЭ ХЭСЭГ МАШ ЧУХАЛ: Cache-ийг бүрэн идэвхгүй болгоно
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
-export async function GET(req: NextRequest) {
+export async function DELETE(req: NextRequest) {
   try {
+    const body = await req.json();
+    const { targetClerkId, adminClerkId } = body;
+
+   
+    if (!targetClerkId || !adminClerkId) {
+      return NextResponse.json(
+        { error: "Устгах ID эсвэл Админы ID дутуу байна" },
+        { status: 400 },
+      );
+    }
+
+    const adminUser = await prisma.user.findUnique({
+      where: { clerkId: adminClerkId },
+    });
+
+    if (adminUser?.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Танд энэ үйлдлийг хийх АДМИН эрх байхгүй" },
+        { status: 403 },
+      );
+    }
+
+   
     const client = await clerkClient();
+    try {
+      await client.users.deleteUser(targetClerkId);
+    } catch (clerkError: any) {
+      console.error("CLERK_DELETE_ERROR:", clerkError);
+      
+    }
 
-    // Clerk-ээс шинээр дата татах
-    const response = await client.users.getUserList({
-      limit: 100,
+ 
+    await prisma.user.delete({
+      where: { clerkId: targetClerkId },
     });
 
-    const users = response.data.map((user) => {
-      const email = user.emailAddresses.find(
-        (e) => e.id === user.primaryEmailAddressId
-      )?.emailAddress || user.emailAddresses[0]?.emailAddress || "No Email";
-
-      return {
-        clerkId: user.id,
-        fullName: `${user.firstName || ""} ${user.lastName || ""}`.trim() || "No Name",
-        email: email,
-        _fetchedAt: new Date().toISOString(), // Хэзээ татсаныг харуулах (Check-ийн тулд)
-      };
-    });
-
-    return NextResponse.json(users);
+    return NextResponse.json(
+      { message: "Хэрэглэгчийг амжилттай устгалаа" },
+      { status: 200 },
+    );
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("ADMIN_DELETE_USER_ERROR:", error);
+    return NextResponse.json(
+      { error: "Устгах явцад алдаа гарлаа" },
+      { status: 500 },
+    );
   }
 }
