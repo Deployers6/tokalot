@@ -15,7 +15,10 @@ export async function GET(req: NextRequest) {
     const requesterId = currentUserId || adminHeaderId;
 
     if (!requesterId) {
-      return NextResponse.json({ error: "Нэвтрээгүй байна эсвэл Админы ID дутуу" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Нэвтрээгүй байна эсвэл Админы ID дутуу" },
+        { status: 401 },
+      );
     }
 
     // Хүсэлт гаргагч нь Админ мөн эсэхийг Clerk-ээс шалгах
@@ -23,7 +26,10 @@ export async function GET(req: NextRequest) {
     const requesterRole = (requester.publicMetadata as { role?: string })?.role;
 
     if (requesterRole !== "ADMIN") {
-      return NextResponse.json({ error: "Танд энэ мэдээллийг харах АДМИН эрх байхгүй" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Танд энэ мэдээллийг харах АДМИН эрх байхгүй" },
+        { status: 403 },
+      );
     }
 
     // 2. Clerk-ээс бүх хэрэглэгчдийг татах
@@ -43,7 +49,7 @@ export async function GET(req: NextRequest) {
     });
 
     const dbUserMap = new Map(
-      dbUsers.map((u) => [u.clerkId, u.membership?.status || "NO_MEMBERSHIP"])
+      dbUsers.map((u) => [u.clerkId, u.membership?.status || "NO_MEMBERSHIP"]),
     );
 
     // 4. Жагсаалтыг шүүж нэгтгэх
@@ -53,23 +59,22 @@ export async function GET(req: NextRequest) {
         return role !== "ADMIN"; // Бусад админуудыг жагсаалтад харуулахгүй
       })
       .map((user) => {
-        const email = user.emailAddresses.find(
-          (e) => e.id === user.primaryEmailAddressId
-        )?.emailAddress || user.emailAddresses[0]?.emailAddress;
+        const email =
+          user.emailAddresses.find((e) => e.id === user.primaryEmailAddressId)
+            ?.emailAddress || user.emailAddresses[0]?.emailAddress;
 
         const status = dbUserMap.get(user.id) || "NO_MEMBERSHIP";
 
         return {
           clerkId: user.id,
-          fullName: `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Нэргүй",
+          fullName:
+            `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Нэргүй",
           email: email,
           membershipStatus: status,
-          isMember: status === "ACTIVE"
+          isMember: status === "ACTIVE",
         };
       });
-
     return NextResponse.json(studentsOnly);
-
   } catch (error: any) {
     console.error("GET_USERS_ERROR:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -79,9 +84,9 @@ export async function GET(req: NextRequest) {
 // import { clerkClient } from "@clerk/nextjs/server";
 
 // import { NextRequest, NextResponse } from "next/server";
- 
+
 // export const dynamic = "force-dynamic";
- 
+
 // export async function OPTIONS() {
 
 //   return new NextResponse(null, {
@@ -101,27 +106,27 @@ export async function GET(req: NextRequest) {
 //   });
 
 // }
- 
+
 // export async function GET(req: NextRequest) {
 
 //   try {
 
 //     const adminClerkId = req.headers.get("x-admin-id");
- 
+
 //     if (!adminClerkId) {
 
 //       return NextResponse.json({ error: "Админы ID дутуу байна" }, { status: 400 });
 
 //     }
- 
+
 //     const client = await clerkClient();
- 
+
 //     const response = await client.users.getUserList({
 
 //       limit: 100,
 
 //     });
- 
+
 //     const studentsOnly = response.data
 
 //       .filter((user) => user.id !== adminClerkId)
@@ -133,7 +138,7 @@ export async function GET(req: NextRequest) {
 //           (e) => e.id === user.primaryEmailAddressId
 
 //         )?.emailAddress || user.emailAddresses[0]?.emailAddress;
- 
+
 //         return {
 
 //           clerkId: user.id,
@@ -145,9 +150,9 @@ export async function GET(req: NextRequest) {
 //         };
 
 //       });
- 
+
 //     return NextResponse.json(studentsOnly);
- 
+
 //   } catch (error: any) {
 
 //     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -155,4 +160,3 @@ export async function GET(req: NextRequest) {
 //   }
 
 // }
- 
