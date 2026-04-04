@@ -1,5 +1,6 @@
-import { clerkClient } from "@clerk/nextjs/server";
+import { clerkClient, auth } from "@clerk/nextjs/server"; // auth() нэмэгдсэн
 import { NextRequest, NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -7,31 +8,63 @@ export async function GET(req: NextRequest) {
   try {
     const client = await clerkClient();
 
-    // 1. Clerk-ээс бүх хэрэглэгчдийг татах
+    // 1. Хүсэлт гаргагчийн эрхийг шалгах (Middleware эсвэл Header-ээс)
+    // Бодит апп дээр auth() ашиглана, Postman дээр Header-ээс авч болно
+    const { userId: currentUserId } = await auth();
+    const adminHeaderId = req.headers.get("x-admin-id");
+    const requesterId = currentUserId || adminHeaderId;
+
+    if (!requesterId) {
+      return NextResponse.json({ error: "Нэвтрээгүй байна эсвэл Админы ID дутуу" }, { status: 401 });
+    }
+
+    // Хүсэлт гаргагч нь Админ мөн эсэхийг Clerk-ээс шалгах
+    const requester = await client.users.getUser(requesterId);
+    const requesterRole = (requester.publicMetadata as { role?: string })?.role;
+
+    if (requesterRole !== "ADMIN") {
+      return NextResponse.json({ error: "Танд энэ мэдээллийг харах АДМИН эрх байхгүй" }, { status: 403 });
+    }
+
+    // 2. Clerk-ээс бүх хэрэглэгчдийг татах
     const response = await client.users.getUserList({
-      limit: 100, // Хэрэглэгчийн тооноос хамаарч тохируулна
+      limit: 100,
     });
 
-    // 2. Зөвхөн "USER" эсвэл Админ биш хүмүүсийг шүүж авах
+    const clerkIds = response.data.map((user) => user.id);
+
+    // 3. Prisma-аас User болон Membership-ийг цуг татах
+    const dbUsers = await prisma.user.findMany({
+      where: { clerkId: { in: clerkIds } },
+      select: {
+        clerkId: true,
+        membership: { select: { status: true } },
+      },
+    });
+
+    const dbUserMap = new Map(
+      dbUsers.map((u) => [u.clerkId, u.membership?.status || "NO_MEMBERSHIP"])
+    );
+
+    // 4. Жагсаалтыг шүүж нэгтгэх
     const studentsOnly = response.data
       .filter((user) => {
-        // Metadata доторх role-ийг шалгах
         const role = (user.publicMetadata as { role?: string })?.role;
-        
-        // Хэрэв role нь "ADMIN" биш бол жагсаалтад оруулна
-        // (Role байхгүй хэрэглэгчдийг мөн сурагч гэж үзнэ)
-        return role !== "ADMIN";
+        return role !== "ADMIN"; // Бусад админуудыг жагсаалтад харуулахгүй
       })
       .map((user) => {
         const email = user.emailAddresses.find(
           (e) => e.id === user.primaryEmailAddressId
         )?.emailAddress || user.emailAddresses[0]?.emailAddress;
 
+        const status = dbUserMap.get(user.id) || "NO_MEMBERSHIP";
+
         return {
           clerkId: user.id,
           fullName: `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Нэргүй",
           email: email,
-          role: (user.publicMetadata as { role?: string })?.role || "USER"
+          membershipStatus: status,
+          isMember: status === "ACTIVE"
         };
       });
 
@@ -42,6 +75,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
 // import { clerkClient } from "@clerk/nextjs/server";
 
 // import { NextRequest, NextResponse } from "next/server";
