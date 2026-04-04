@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
     } else {
       return NextResponse.json(
         {
-          message: "Ta gihsiuohaf h",
+          message: "Ta gishuun bish baina",
         },
         { status: 400 },
       );
