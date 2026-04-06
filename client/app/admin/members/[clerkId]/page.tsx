@@ -3193,9 +3193,25 @@ export default function EditUserPage() {
         }),
       });
 
+      // await fetch(`${BACKEND_URL}/api/admin/membership`, {
+      //   method: "PATCH",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify({
+      //     clerkId,
+      //     startDate: membershipStart?.toISOString(),
+      //     endDate: membershipEnd?.toISOString(),
+      //     totalSessions: sessionTotal,
+      //     usedSessions: sessionUsed,
+      //     status: membershipStatus,
+      //   }),
+      // });
+
       await fetch(`${BACKEND_URL}/api/admin/membership`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": clerkId, // ← ЭНЭ НЭМЭХ
+        },
         body: JSON.stringify({
           clerkId,
           startDate: membershipStart?.toISOString(),
