@@ -3142,9 +3142,19 @@ export default function EditUserPage() {
       setUser(found);
       setFullName(found.fullName ?? "");
 
+      // const memRes = await fetch(
+      //   `${BACKEND_URL}/api/admin/membership?clerkId=${clerkId}`,
+      //   { headers: { "x-admin-id": userId ?? "" } },
+      // );
+
       const memRes = await fetch(
-        `${BACKEND_URL}/api/admin/membership?clerkId=${clerkId}`,
-        { headers: { "x-admin-id": userId ?? "" } },
+        `${BACKEND_URL}/api/admin/membership`, // query parameter хасна
+        {
+          headers: {
+            "x-user-id": clerkId, // ← header-р илгээнэ
+            "x-admin-id": userId ?? "",
+          },
+        },
       );
 
       let memData: MembershipData | null = null;
