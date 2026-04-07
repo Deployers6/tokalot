@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { Resend } from 'resend'; // npx install resend
+import { Resend } from 'resend'; 
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -14,7 +14,7 @@ export async function GET(req: Request) {
     const now = new Date();
     const limit = new Date(now.getTime() + 48 * 60 * 60 * 1000);
 
-    // 1. Шалгах шаардлагатай хичээлүүдээ авах (Сурагчдын мэдээлэлтэй нь хамт)
+   
     const sessionsToCheck = await prisma.section.findMany({
       where: {
         status: true,
@@ -23,7 +23,7 @@ export async function GET(req: Request) {
       include: {
         bookings: {
           include: {
-            user: true, // Сурагчийн email-ийг авахын тулд
+            user: true, 
           },
         },
         _count: { select: { bookings: true } },
@@ -34,13 +34,13 @@ export async function GET(req: Request) {
 
     for (const session of sessionsToCheck) {
       if (session._count.bookings < 3) {
-        // А. Хичээлийг цуцлах
+     
         await prisma.section.update({
           where: { id: session.id },
           data: { status: false },
         });
 
-        // Б. Бүртгүүлсэн сурагчид руу Email илгээх
+      
         for (const booking of session.bookings) {
           if (booking.user.email) {
             try {

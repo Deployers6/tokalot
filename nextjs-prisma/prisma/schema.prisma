@@ -90,14 +90,14 @@ model Membership {
   clerkId String @id
   user    User   @relation(fields: [clerkId], references: [clerkId])
 
-  // Анх Pending байхад хугацаа тодорхойгүй байж болох тул DateTime? (Optional) болгохыг зөвлөе
+
   startDate     DateTime? 
   endDate       DateTime? 
   
   totalSessions Int      @default(0)
   usedSessions  Int      @default(0)
   
-  // Энд String-ийн оронд enum-аа зааж өгнө
+
   status        MembershipStatus @default(PENDING)
 
   history MembershipHistory[]
