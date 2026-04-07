@@ -47,20 +47,20 @@ export async function POST(req: NextRequest) {
     }
 
     // 4. TRANSACTION: Membership болон History-г зэрэг үүсгэх
+  // ... (дээрх хэсэг ижил)
+
+    // 4. Membership үүсгэх
     const newMembership = await prisma.membership.create({
       data: {
         clerkId: clerkId,
         status: "PENDING",
         totalSessions: 0,
         usedSessions: 0,
-        history: {
-          create: {
-            action: "REQUESTED",
-            change: 0,
-          },
-        },
+        // history: { create: { action: "REQUESTED", change: 0 } }, // УСТГАХ
       },
     });
+
+// ... (үлдсэн хэсэг ижил)
 
     // 5. Админ руу Resend-ээр имэйл мэдэгдэл илгээх
     try {

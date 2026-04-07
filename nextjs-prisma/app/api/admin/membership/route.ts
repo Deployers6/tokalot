@@ -13,11 +13,6 @@ export async function GET(req: NextRequest) {
     // Зөвхөн байгаа датаг хайж олно (Шинээр үүсгэхгүй)
     const membership = await prisma.membership.findUnique({
       where: { clerkId: clerkId },
-      include: {
-        history: {
-          orderBy: { createdAt: "desc" }, // Хамгийн сүүлийн түүхийг эхэнд нь
-        },
-      },
     });
 
     // Хэрэв байхгүй бол 200 статус бүхий null буцаана (Frontend дээр "Member биш" гэж харуулна)
@@ -59,17 +54,6 @@ export async function PATCH(req: NextRequest) {
         ...(body.startDate && { startDate: new Date(body.startDate) }),
         ...(body.endDate && { endDate: new Date(body.endDate) }),
         ...(body.status && { status: body.status }),
-
-        history: {
-          create: {
-            action: body.action || "ADMIN UPDATE",
-      
-            change:
-              body.totalSessions !== undefined
-                ? Number(body.totalSessions) - (current?.totalSessions || 0)
-                : 0,
-          },
-        },
       },
       create: {
        
@@ -79,15 +63,6 @@ export async function PATCH(req: NextRequest) {
         totalSessions: Number(body.totalSessions) || 0,
         usedSessions: Number(body.usedSessions) || 0,
         status: body.status || "PENDING",
-        history: {
-          create: {
-            action: "INITIAL_CREATE_VIA_PATCH",
-            change: Number(body.totalSessions) || 0,
-          },
-        },
-      },
-      include: {
-        history: true,
       },
     });
 
@@ -121,10 +96,6 @@ export async function DELETE(req: NextRequest) {
     });
 
     if (membership) {
-      await prisma.membershipHistory.deleteMany({
-        where: { clerkId: membership.clerkId },
-      });
-
       await prisma.membership.delete({
         where: { clerkId: clerkId },
       });

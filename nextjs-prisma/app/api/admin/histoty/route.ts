@@ -1,27 +1,117 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-export async function DELETE(req: NextRequest) {
+
+export async function GET(req: NextRequest) {
+  const clerkId = req.headers.get("x-user-id");
+
+  if (!clerkId || clerkId === "null") {
+    return NextResponse.json({ error: "clerkId олдсонгүй" }, { status: 400 });
+  }
+
   try {
-    // 💡 Эхлээд текст хэлбэрээр уншиж шалгах (JSON хоосон эсэхийг мэдэхийн тулд)
-    const text = await req.text();
-    if (!text) {
-      return NextResponse.json({ error: "Body хоосон байна" }, { status: 400 });
-    }
-
-    const body = JSON.parse(text);
-    const { id } = body;
-
-    if (!id) {
-      return NextResponse.json({ error: "ID шаардлагатай" }, { status: 400 });
-    }
-
-    await prisma.membershipHistory.delete({
-      where: { id: id },
+    const membership = await prisma.membership.findUnique({
+      where: { clerkId: clerkId },
+      // include: { history: { orderBy: { createdAt: "desc" } } }, // УСТГАХ
     });
 
-    return NextResponse.json({ message: "Амжилттай устлаа" });
+    return NextResponse.json(membership);
   } catch (error: any) {
-    console.error("DELETE ERROR:", error);
-    return NextResponse.json({ error: "JSON формат буруу эсвэл дата олдсонгүй" }, { status: 500 });
+    console.error("GET Membership Error:", error);
+    return NextResponse.json(
+      { error: "Дата авахад алдаа гарлаа" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  const rawId = req.headers.get("x-user-id");
+  const clerkId = rawId?.trim();
+
+  if (!clerkId || clerkId === "null") {
+    return NextResponse.json({ error: "clerkId олдсонгүй" }, { status: 400 });
+  }
+
+  try {
+    const body = await req.json();
+    console.log({ clerkId });
+
+    const current = await prisma.membership.findUnique({
+      where: { clerkId: clerkId },
+    });
+
+    const updatedMembership = await prisma.membership.upsert({
+      where: { clerkId: clerkId },
+      update: {
+        ...(body.totalSessions !== undefined && {
+          totalSessions: Number(body.totalSessions),
+        }),
+        ...(body.usedSessions !== undefined && {
+          usedSessions: Number(body.usedSessions),
+        }),
+        ...(body.startDate && { startDate: new Date(body.startDate) }),
+        ...(body.endDate && { endDate: new Date(body.endDate) }),
+        ...(body.status && { status: body.status }),
+        // history: { create: { action: body.action || "ADMIN UPDATE", change: ... } }, // УСТГАХ
+      },
+      create: {
+        clerkId: clerkId,
+        startDate: body.startDate ? new Date(body.startDate) : new Date(),
+        endDate: body.endDate ? new Date(body.endDate) : new Date(),
+        totalSessions: Number(body.totalSessions) || 0,
+        usedSessions: Number(body.usedSessions) || 0,
+        status: body.status || "PENDING",
+        // history: { create: { action: "INITIAL_CREATE_VIA_PATCH", change: ... } }, // УСТГАХ
+      },
+      // include: { history: true }, // УСТГАХ
+    });
+
+    return NextResponse.json(updatedMembership);
+  } catch (error: any) {
+    console.error("PATCH Error Details:", error);
+    return NextResponse.json(
+      {
+        error: "Шинэчлэхэд алдаа гарлаа",
+        details: error.message,
+        prismaCode: error.code,
+      },
+      { status: 500 },
+    );
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  const clerkId = req.headers.get("x-user-id");
+
+  if (!clerkId) {
+    return NextResponse.json(
+      { error: "Header-т x-user-id алга" },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const membership = await prisma.membership.findUnique({
+      where: { clerkId: clerkId },
+    });
+
+    if (membership) {
+      // await prisma.membershipHistory.deleteMany({ where: { clerkId: membership.clerkId } }); // УСТГАХ
+      await prisma.membership.delete({
+        where: { clerkId: clerkId },
+      });
+    }
+
+    return NextResponse.json({ message: "Амжилттай устгагдлаа" });
+  } catch (error: any) {
+    console.error("DELETE Error:", error);
+    return NextResponse.json(
+      {
+        error: "Устгахад алдаа гарлаа",
+        message: error.message,
+        code: error.code,
+      },
+      { status: 500 },
+    );
   }
 }

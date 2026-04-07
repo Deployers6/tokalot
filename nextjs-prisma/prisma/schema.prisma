@@ -33,7 +33,6 @@ model User {
   isTrialUsed    Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-
   bookings   Booking[]
   membership Membership?
 
@@ -78,40 +77,29 @@ model Booking {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user    User    @relation(fields: [clerkId], references: [clerkId], onDelete: Cascade)
-  section Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  user       User       @relation(fields: [clerkId], references: [clerkId], onDelete: Cascade, map: "booking_user_fkey")
+  section    Section    @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  membership Membership @relation("MembershipToBookings", fields: [clerkId], references: [clerkId], onDelete: Cascade, map: "booking_membership_fkey")
 
   @@unique([clerkId, sectionId])
   @@index([clerkId])
   @@index([sectionId])
 }
-
 model Membership {
   clerkId String @id
   user    User   @relation(fields: [clerkId], references: [clerkId])
 
-
   startDate     DateTime? 
   endDate       DateTime? 
-  
   totalSessions Int      @default(0)
   usedSessions  Int      @default(0)
-  
-
   status        MembershipStatus @default(PENDING)
 
-  history MembershipHistory[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  bookings      Booking[] @relation("MembershipToBookings")
 }
 
-model MembershipHistory {
-  id           String     @id @default(cuid())
-  clerkId      String     
-  membership   Membership @relation(fields: [clerkId], references: [clerkId], onDelete: Cascade)
 
-  action String 
-  change Int 
-
-  createdAt DateTime @default(now())
-
-  @@index([clerkId])
-}
