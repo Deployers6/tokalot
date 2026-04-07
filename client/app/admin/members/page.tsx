@@ -1,5 +1,3 @@
-
-
 // "use client";
 
 // import React, { useState, useEffect } from "react";
@@ -169,7 +167,6 @@
 
 // export default User;
 
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -207,12 +204,20 @@ const User = () => {
       setError(null);
       const res = await fetch(`${BACKEND_URL}/api/admin/get-user`, {
         method: "GET",
-        headers: { "Content-Type": "application/json", "x-admin-id": userId ?? "" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-id": userId ?? "",
+        },
       });
       if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
       const data = await res.json();
       const list = Array.isArray(data) ? data : (data?.users ?? []);
-      setUsers(list.map((u: any) => ({ ...u, isMember: u.membershipStatus === "ACTIVE" })));
+      setUsers(
+        list.map((u: any) => ({
+          ...u,
+          isMember: u.membershipStatus === "ACTIVE",
+        })),
+      );
     } catch (err: any) {
       setError(err.message ?? "Unknown error");
       setUsers([]);
@@ -221,7 +226,9 @@ const User = () => {
     }
   };
 
-  useEffect(() => { if (userId) fetchUsers(); }, [userId]);
+  useEffect(() => {
+    if (userId) fetchUsers();
+  }, [userId]);
 
   const handleDelete = async (clerkId: string) => {
     if (!confirm("Are you sure?")) return;
@@ -232,10 +239,14 @@ const User = () => {
         body: JSON.stringify({ targetClerkId: clerkId, adminClerkId: userId }),
       });
       fetchUsers();
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const filtered = users.filter(u => u.fullName?.toLowerCase().includes(search.toLowerCase()));
+  const filtered = users.filter((u) =>
+    u.fullName?.toLowerCase().includes(search.toLowerCase()),
+  );
 
   return (
     <div className="h-screen w-screen flex flex-col bg-white">
@@ -253,30 +264,40 @@ const User = () => {
         </div>
 
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-extrabold text-gray-900">Student Directory</h1>
+          <h1 className="text-2xl font-extrabold text-gray-900">
+            Student Directory
+          </h1>
           <span className="text-[#20BEF9] font-extrabold text-sm border border-[#20BEF9] rounded-lg px-3 py-1">
             {filtered.length} TOTAL
           </span>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4 text-sm text-red-600">⚠️ {error}</div>
+          <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4 text-sm text-red-600">
+            ⚠️ {error}
+          </div>
         )}
 
         <div className="flex flex-col gap-3">
           {loading && <p className="text-gray-400">Loading...</p>}
-          {!loading && !error && filtered.length === 0 && <p className="text-gray-400">No users found</p>}
-          {filtered.map(user => (
-            <UserCard key={user.clerkId} user={user} onDelete={() => handleDelete(user.clerkId)} />
+          {!loading && !error && filtered.length === 0 && (
+            <p className="text-gray-400">No users found</p>
+          )}
+          {filtered.map((user) => (
+            <UserCard
+              key={user.clerkId}
+              user={user}
+              onDelete={() => handleDelete(user.clerkId)}
+            />
           ))}
         </div>
       </div>
 
-      <div className="absolute bottom-24 right-5">
+      {/* <div className="absolute bottom-24 right-5">
         <button className="bg-gray-900 text-white h-[64px] w-[64px] rounded-2xl flex items-center justify-center shadow-lg">
           <UserPlus className="h-6 w-6" />
         </button>
-      </div>
+      </div> */}
 
       <Footer />
     </div>

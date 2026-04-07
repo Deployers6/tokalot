@@ -66,6 +66,7 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
+
     const { fullName, bio, experience, imageUrl } = body;
 
     const updated = await prisma.teacher.update({
