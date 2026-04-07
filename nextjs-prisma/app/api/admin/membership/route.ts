@@ -62,7 +62,7 @@ export async function PATCH(req: NextRequest) {
 
         history: {
           create: {
-            action: body.action || "ADMIN_UPDATE",
+            action: body.action || "ADMIN UPDATE",
       
             change:
               body.totalSessions !== undefined
@@ -78,7 +78,7 @@ export async function PATCH(req: NextRequest) {
         endDate: body.endDate ? new Date(body.endDate) : new Date(),
         totalSessions: Number(body.totalSessions) || 0,
         usedSessions: Number(body.usedSessions) || 0,
-        status: body.status || "pending",
+        status: body.status || "PENDING",
         history: {
           create: {
             action: "INITIAL_CREATE_VIA_PATCH",
