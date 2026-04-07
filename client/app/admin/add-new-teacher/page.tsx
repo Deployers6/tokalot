@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { Camera, User, ArrowLeft, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -18,8 +19,10 @@ interface TeacherForm {
 
 export default function AddNewTeacher() {
   const router = useRouter();
+  const { getToken } = useAuth();
   const [open, setOpen] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState<TeacherForm>({
@@ -39,9 +42,16 @@ export default function AddNewTeacher() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     const objectUrl = URL.createObjectURL(file);
     setPreview(objectUrl);
-    setForm((prev) => ({ ...prev, image: objectUrl }));
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      setForm((prev) => ({ ...prev, image: base64 }));
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async () => {
@@ -50,24 +60,39 @@ export default function AddNewTeacher() {
       return;
     }
 
+    setLoading(true);
     try {
-      const res = await fetch("/api/admin/teachers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fullName: form.name,
-          bio: form.bio,
-          experience: form.level,
-          imageUrl: form.image,
-        }),
-      });
+      const token = await getToken();
 
-      if (!res.ok) throw new Error("Алдаа гарлаа");
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/teachers`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            fullName: form.name,
+            bio: form.bio,
+            experience: form.level,
+            imageUrl: form.image,
+          }),
+        },
+      );
 
-      router.push("/admin/teachers");
+      if (res.ok) {
+        router.push("/admin/teachers");
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data?.error || "Хадгалахад алдаа гарлаа");
+      }
     } catch (err) {
-      alert("Хадгалахад алдаа гарлаа");
       console.error(err);
+      alert("Хадгалахад алдаа гарлаа");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -135,7 +160,9 @@ export default function AddNewTeacher() {
             <button
               type="button"
               onClick={() => setOpen((prev) => !prev)}
-              className={`w-full h-[56px] px-4 bg-[#EFEFEF] border-none flex items-center justify-between cursor-pointer text-sm transition-all ${open ? "rounded-t-xl" : "rounded-xl"}`}
+              className={`w-full h-[56px] px-4 bg-[#EFEFEF] border-none flex items-center justify-between cursor-pointer text-sm transition-all ${
+                open ? "rounded-t-xl" : "rounded-xl"
+              }`}
             >
               <span className={form.level ? "text-gray-800" : "text-gray-400"}>
                 {form.level || "Select level"}
@@ -184,9 +211,10 @@ export default function AddNewTeacher() {
 
         <button
           onClick={handleSubmit}
-          className="w-full py-3 rounded-full bg-black text-white font-bold"
+          disabled={loading}
+          className="w-full py-3 rounded-full bg-black text-white font-bold disabled:opacity-50"
         >
-          Save Teacher
+          {loading ? "Saving..." : "Save Teacher"}
         </button>
       </div>
       <Footer />

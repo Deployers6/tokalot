@@ -69,6 +69,7 @@ export async function PATCH(req: Request) {
 
     // 3. Body-оос мэдээллийг авах
     const body = await req.json();
+
     const { fullName, bio, experience, imageUrl } = body;
 
     // 4. Өгөгдлийг шинэчлэх
