@@ -1,27 +1,42 @@
+// /api/admin/sessions/[id]/route.ts
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-//admin session update
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
-  try {
-    const body = await req.json();
-    const { title, teacherId, StartTime, endTime, capacity } = body;
 
-    const updated = await prisma.section.update({
-      where: { id: params.id },
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const { id } = await params;
+    const body = await req.json();
+
+    // teacherId-г body-оос авч байна
+    const { title, startTime, level, endTime, capacity, status, teacherId } = body;
+
+    const updatedSection = await prisma.section.update({
+      where: { id: id },
       data: {
-        title,
-        teacherId, // Багшийн ID-г энд шинэчилнэ
-        StartTime: new Date(StartTime),
-        endTime: new Date(endTime),
-        capacity: Number(capacity),
+        ...(title && { title }),
+        ...(level && { level }),
+        ...(teacherId && { teacherId }), // Багшийг шинэчлэх хэсэг
+        ...(startTime && { StartTime: new Date(startTime) }),
+        ...(endTime && { endTime: new Date(endTime) }),
+        ...(capacity && { capacity: parseInt(capacity) }),
+        ...(status !== undefined && { status }),
       },
+      // Энэ хэсэг маш чухал: Шинэ багшийн мэдээллийг (fullName гэх мэт) 
+      // цуг буцааж өгснөөр Frontend дээр багшийн нэр шууд солигдоно.
       include: {
-        teacher: true, // Шинэ багшийн нэрийг цуг буцаах нь чухал!
+        teacher: true,
       }
     });
 
-    return NextResponse.json(updated);
-  } catch (error) {
-    return NextResponse.json({ error: "Алдаа" }, { status: 500 });
+    return NextResponse.json(updatedSection, { status: 200 });
+  } catch (error: any) {
+    console.error("Failed to update session:", error);
+    return NextResponse.json(
+      { error: "Failed to update session", details: error.message },
+      { status: 500 },
+    );
   }
 }

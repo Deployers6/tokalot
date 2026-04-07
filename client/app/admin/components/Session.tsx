@@ -32,7 +32,6 @@ interface Section {
   status: boolean;
   enrolledCount?: number;
 }
-
 const BACKEND_URL = "https://tokalot.vercel.app";
 
 function formatTime(iso: string) {
@@ -237,47 +236,40 @@ function EditForm({
   const set = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
 
+  // EditForm доторх handleSave хэсэг
   const handleSave = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (form.endTime <= form.startTime) {
-    setError("End time нь start time-аас хожуу байх ёстой.");
-    return;
-  }
-  setLoading(true);
-  setError("");
-  
-  try {
-    // Цагийг яг байгаагаар нь Date объект болгож хадгалах
-    // Ингэснээр Browser-ийн цагийн бүс зөв ажиллана
-    const startIso = new Date(`${form.sessionDate}T${form.startTime}:00`).toISOString();
-    const endIso = new Date(`${form.sessionDate}T${form.endTime}:00`).toISOString();
+    e.preventDefault();
+    setLoading(true);
 
-    const payload = {
-      title: form.title,
-      teacherId: form.teacherId, // Энэ ID-г дамжуулснаар багш солигдоно
-      StartTime: startIso,
-      endTime: endIso,
-      capacity: Number(form.capacity),
-    };
+    try {
+      const payload = {
+        title: form.title,
+        teacherId: form.teacherId, // Сонгосон багшийн ID
+        startTime: `${form.sessionDate}T${form.startTime}:00`,
+        endTime: `${form.sessionDate}T${form.endTime}:00`,
+        capacity: String(form.capacity), // Backend-д parseInt хийж байгаа тул string явуулж болно
+      };
 
-    const res = await fetch(
-      `${BACKEND_URL}/api/admin/patch.session/${section.id}`,
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      },
-    );
+      const res = await fetch(
+        `${BACKEND_URL}/api/admin/sessions/${section.id}`, // URL-аа зөв эсэхийг шалгаарай
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
 
-    if (!res.ok) throw new Error("Шинэчилж чадсангүй");
-    
-    onSuccess(); // Энэ нь fetchSections()-ийг дуудаж багшийн нэрийг шинээр авна
-  } catch (err) {
-    setError(err instanceof Error ? err.message : "Алдаа гарлаа");
-  } finally {
-    setLoading(false);
-  }
-};
+      if (res.ok) {
+        onSuccess(); // Энэ нь fetchSections-ийг дуудаж бүх жагсаалтыг шинэчилнэ
+      } else {
+        throw new Error("Update failed");
+      }
+    } catch (err) {
+      setError("Алдаа гарлаа");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleDelete = async () => {
     if (!confirm("Энэ session-г устгах уу?")) return;
