@@ -14,22 +14,22 @@ export async function PATCH(
     const { title, startTime, level, endTime, capacity, status, teacherId } = body;
 
     const updatedSection = await prisma.section.update({
-      where: { id: id },
-      data: {
-        ...(title && { title }),
-        ...(level && { level }),
-        ...(teacherId && { teacherId }), // Багшийг шинэчлэх хэсэг
-        ...(startTime && { StartTime: new Date(startTime) }),
-        ...(endTime && { endTime: new Date(endTime) }),
-        ...(capacity && { capacity: parseInt(capacity) }),
-        ...(status !== undefined && { status }),
-      },
-      // Энэ хэсэг маш чухал: Шинэ багшийн мэдээллийг (fullName гэх мэт) 
-      // цуг буцааж өгснөөр Frontend дээр багшийн нэр шууд солигдоно.
-      include: {
-        teacher: true,
-      }
-    });
+  where: { id: id },
+  data: {
+    ...(title && { title }),
+    ...(level && { level }),
+    ...(teacherId && { teacherId }),
+    // Database-ийн баганын нэр 'StartTime' (Том S) байна
+    ...(startTime && { StartTime: new Date(startTime) }), 
+    // Database-ийн баганын нэр 'endTime' (Жижиг e) байна
+    ...(endTime && { endTime: new Date(endTime) }),
+    ...(capacity && { capacity: parseInt(capacity) }),
+    ...(status !== undefined && { status }),
+  },
+  include: {
+    teacher: true, // Ингэж байж fullName харагдана
+  }
+});
 
     return NextResponse.json(updatedSection, { status: 200 });
   } catch (error: any) {
