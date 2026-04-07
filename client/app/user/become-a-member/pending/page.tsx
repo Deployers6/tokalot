@@ -1,10 +1,34 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ClipboardList, Clock, Info } from "lucide-react";
+import { useUser } from "@clerk/nextjs";
 
 export default function MembershipPendingPage() {
   const router = useRouter();
+  const { user } = useUser();
+
+  useEffect(() => {
+    if (!user) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch("/api/membership/status", {
+          headers: { "x-user-id": user.id },
+        });
+        const data = await res.json();
+        if (data?.status === "ACTIVE") {
+          clearInterval(interval);
+          router.push("/user/dashboard");
+        }
+      } catch {
+        // network error, дараа дахин шалгана
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [user, router]);
 
   return (
     <div className="flex min-h-screen items-center justify-center md:bg-neutral-200 md:py-10">
@@ -36,7 +60,6 @@ export default function MembershipPendingPage() {
                 />
               </div>
             </div>
-            {/* Processing badge */}
             <div className="absolute -top-1 right-0 flex items-center gap-1 bg-amber-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-md">
               <Clock size={10} />
               PROCESSING
@@ -61,13 +84,6 @@ export default function MembershipPendingPage() {
               </p>
             </div>
           </div>
-
-          <button
-            onClick={() => router.push("/user/welcome")}
-            className="w-full rounded-2xl bg-black py-4 text-sm font-bold text-white hover:bg-neutral-800 transition-colors"
-          >
-            Continue
-          </button>
 
         </div>
 

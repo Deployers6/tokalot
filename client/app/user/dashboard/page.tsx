@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, BookMarked, ChevronRight } from "lucide-react";
+import { CalendarDays, BookMarked, CheckCircle2, Clock, UserCircle } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
-import { fetchSessions, bookSession } from "@/lib/api";
+import { fetchSessions, bookSession, fetchMyBookings } from "@/lib/api";
 
 function cn(...classes: (string | undefined | false)[]) {
   return classes.filter(Boolean).join(" ");
@@ -56,12 +56,23 @@ export default function DashboardPage() {
   const [activeDay, setActiveDay] = useState(todayFull);
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"schedule" | "sessions">("schedule");
+  const [activeTab, setActiveTab] = useState<"schedule" | "sessions" | "profile">("schedule");
   const [bookedIds, setBookedIds] = useState<Set<string>>(new Set());
   const [bookingId, setBookingId] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const activeDayObj = days.find((d) => d.fullDate === activeDay) ?? days[0];
+
+  useEffect(() => {
+    if (!user?.id) return;
+    fetchMyBookings(user.id, "upcoming")
+      .then((bookings: any[]) => {
+        const ids = new Set(bookings.map((b) => b.section?.id).filter(Boolean));
+        setBookedIds(ids);
+      })
+      .catch(() => {});
+  }, [user?.id]);
 
   useEffect(() => {
     setLoading(true);
@@ -71,15 +82,19 @@ export default function DashboardPage() {
       .finally(() => setLoading(false));
   }, [activeDay]);
 
-  async function handleBook(e: React.MouseEvent, sectionId: string) {
-    e.stopPropagation();
-    if (!user?.id) return;
-    setBookingId(sectionId);
+  async function handleBook() {
+    if (!user?.id || !confirmId) return;
+    setBookingId(confirmId);
+    setConfirmId(null);
     try {
-      await bookSession(sectionId, user.id);
-      setBookedIds((prev) => new Set(prev).add(sectionId));
+      await bookSession(confirmId, user.id);
+      setBookedIds((prev) => new Set(prev).add(confirmId));
     } catch (err: any) {
-      alert(err.message);
+      if (err.message?.includes("бүртгүүлсэн")) {
+        setBookedIds((prev) => new Set(prev).add(confirmId));
+      } else {
+        alert(err.message);
+      }
     } finally {
       setBookingId(null);
     }
@@ -144,9 +159,35 @@ export default function DashboardPage() {
                   <p className="text-sm font-semibold text-slate-400">Энэ өдөр session байхгүй</p>
                 </div>
               ) : (
-                sessions.map((session, idx) => {
+                sessions.map((session) => {
                   const isBooked = bookedIds.has(session.id);
                   const isBooking = bookingId === session.id;
+
+                  if (isBooked) {
+                    return (
+                      <div
+                        key={session.id}
+                        className="rounded-xl border border-slate-100 bg-white shadow-sm overflow-hidden"
+                        style={{ borderLeft: "4px solid #0BC917" }}
+                      >
+                        <div className="px-4 py-4 flex flex-col gap-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <p className="text-[10px] font-bold text-green-500 mb-1">SCHEDULED</p>
+                              <p className="text-sm font-bold text-black">{session.title}</p>
+                              <p className="text-xs text-slate-400 mt-0.5">{session.level}</p>
+                            </div>
+                            <CheckCircle2 size={18} className="text-green-500 shrink-0 mt-0.5" />
+                          </div>
+                          <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                            <Clock size={13} />
+                            <span>{formatTime(session.StartTime)} - {formatTime(session.endTime)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
                   return (
                     <div
                       key={session.id}
@@ -160,21 +201,13 @@ export default function DashboardPage() {
                         <p className="text-sm font-bold text-black">{session.title}</p>
                         <p className="text-xs text-slate-400">{session.level}</p>
                       </div>
-                      {isBooked ? (
-                        <button className="ml-3 shrink-0 rounded-full bg-emerald-500 px-4 py-2 text-xs font-bold text-white">
-                          Booked
-                        </button>
-                      ) : idx === 0 ? (
-                        <button
-                          onClick={(e) => handleBook(e, session.id)}
-                          disabled={isBooking}
-                          className="ml-3 shrink-0 rounded-full bg-sky-500 px-4 py-2 text-xs font-bold text-white hover:bg-sky-600 transition-colors disabled:opacity-60"
-                        >
-                          {isBooking ? "..." : "Book Now"}
-                        </button>
-                      ) : (
-                        <ChevronRight size={18} className="text-slate-300 shrink-0 ml-2" />
-                      )}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setConfirmId(session.id); }}
+                        disabled={isBooking}
+                        className="ml-3 shrink-0 rounded-full bg-sky-500 px-4 py-2 text-xs font-bold text-white hover:bg-sky-600 transition-colors disabled:opacity-60"
+                      >
+                        {isBooking ? "..." : "Book Now"}
+                      </button>
                     </div>
                   );
                 })
@@ -183,18 +216,46 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* Confirmation bottom sheet */}
+        {confirmId && (
+          <div className="absolute inset-0 z-50 flex items-end justify-center">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setConfirmId(null)} />
+            <div className="relative w-full bg-white rounded-t-3xl px-6 pt-8 pb-10 flex flex-col gap-4 shadow-2xl">
+              <button
+                onClick={handleBook}
+                className="w-full rounded-2xl bg-black py-4 text-sm font-bold text-white hover:bg-neutral-800 transition-colors"
+              >
+                Confirm Booking
+              </button>
+              <button
+                onClick={() => setConfirmId(null)}
+                className="w-full py-3 text-sm font-semibold text-slate-500 hover:text-black transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Bottom nav */}
         <div className="absolute bottom-0 left-0 right-0 flex items-center justify-around bg-black py-3">
           <button
             onClick={() => setActiveTab("schedule")}
-            className={cn("flex flex-col items-center gap-1 px-8 py-1 transition-colors", activeTab === "schedule" ? "text-sky-400" : "text-slate-500")}
+            className={cn("flex flex-col items-center gap-1 px-4 py-1 transition-colors", activeTab === "schedule" ? "text-sky-400" : "text-slate-500")}
           >
             <CalendarDays size={20} />
             <span className="text-[10px] font-bold tracking-wide">SCHEDULE</span>
           </button>
           <button
+            onClick={() => { setActiveTab("profile"); router.push("/user/profile"); }}
+            className={cn("flex flex-col items-center gap-1 px-4 py-1 transition-colors", activeTab === "profile" ? "text-sky-400" : "text-slate-500")}
+          >
+            <UserCircle size={20} />
+            <span className="text-[10px] font-bold tracking-wide">PROFILE</span>
+          </button>
+          <button
             onClick={() => { setActiveTab("sessions"); router.push("/user/my-sessions"); }}
-            className={cn("flex flex-col items-center gap-1 px-8 py-1 transition-colors", activeTab === "sessions" ? "text-sky-400" : "text-slate-500")}
+            className={cn("flex flex-col items-center gap-1 px-4 py-1 transition-colors", activeTab === "sessions" ? "text-sky-400" : "text-slate-500")}
           >
             <BookMarked size={20} />
             <span className="text-[10px] font-bold tracking-wide">SESSIONS</span>
