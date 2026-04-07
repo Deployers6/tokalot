@@ -31,7 +31,6 @@ export default function EditTeacherProfilePage() {
   const [preview, setPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch single teacher
   useEffect(() => {
     const fetchTeacher = async () => {
       try {
@@ -40,21 +39,15 @@ export default function EditTeacherProfilePage() {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        if (!res.ok) {
-          const text = await res.text();
-          console.error("Fetch error:", res.status, text);
-          router.push("/admin/teachers");
-          return;
-        }
+        const data = await res.json();
 
-        const teachers: Teacher[] = await res.json();
+        const teachers: Teacher[] = Array.isArray(data) ? data : [];
+
         const t = teachers.find((teacher) => teacher.id === params.id);
-
         if (!t) {
           router.push("/admin/teachers");
           return;
         }
-
         setForm(t);
       } catch (err) {
         console.error(err);
@@ -93,15 +86,16 @@ export default function EditTeacherProfilePage() {
     setSaving(true);
     try {
       const token = await getToken();
-      const url = `${BACKEND_URL}/api/admin/teachers?id=${form.id}`;
 
+      const url = `${BACKEND_URL}/api/admin/teachers`;
       const res = await fetch(url, {
-        method: "PUT",
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
+          id: form.id,
           fullName: form.fullName,
           bio: form.bio,
           experience: form.experience,
@@ -135,17 +129,15 @@ export default function EditTeacherProfilePage() {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         alert(data?.error || "Зөвхөн өөрийн нэмсэн багшийг устгах боломжтой");
         return;
       }
-
       router.push("/admin/teachers");
     } catch (err) {
-      console.error(err);
       alert("Устгахад алдаа гарлаа");
+      console.error(err);
     }
   };
 
@@ -163,7 +155,6 @@ export default function EditTeacherProfilePage() {
       </div>
 
       <div className="p-6 space-y-6 max-w-md w-full mx-auto">
-        {/* Profile Photo */}
         <div className="flex flex-col items-center">
           <div className="relative pt-8">
             <div className="w-28 h-28 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
@@ -197,7 +188,6 @@ export default function EditTeacherProfilePage() {
           <p className="mt-2 text-gray-600 text-sm">Upload Profile Photo</p>
         </div>
 
-        {/* Full Name */}
         <div>
           <label className="block mb-2 text-sm font-medium">Full Name</label>
           <input
@@ -208,7 +198,6 @@ export default function EditTeacherProfilePage() {
           />
         </div>
 
-        {/* Experience Level Dropdown */}
         <div>
           <label className="block mb-2 text-sm font-medium">
             Experience Level
@@ -255,7 +244,6 @@ export default function EditTeacherProfilePage() {
           </div>
         </div>
 
-        {/* Bio */}
         <div>
           <label className="block mb-2 text-sm font-medium">
             Professional Bio
@@ -269,7 +257,6 @@ export default function EditTeacherProfilePage() {
           />
         </div>
 
-        {/* Buttons */}
         <button
           onClick={handleSave}
           disabled={saving}
