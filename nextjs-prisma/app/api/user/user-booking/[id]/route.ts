@@ -40,39 +40,36 @@ export async function DELETE(
     const now = new Date();
     const startTime = new Date(booking.section.StartTime);
 
-    const diffInHours =
-      (startTime.getTime() - now.getTime()) / (1000 * 60 * 60);
-
-    if (diffInHours < 48) {
+    if (startTime <= now) {
       return NextResponse.json(
-        {
-          error:
-            "Хичээл эхлэхээс 48 цагийн өмнө цуцлах ёстой. Одоо цуцлах боломжгүй.",
-        },
+        { error: "Хичээл эхэлсэн тул цуцлах боломжгүй." },
+        { status: 400 },
+      );
+    }
+
+    const hoursLeft = (startTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+    if (hoursLeft < 48) {
+      return NextResponse.json(
+        { error: "Хичээл эхлэхэд 48 цагаас бага хугацаа үлдсэн тул цуцлах боломжгүй." },
         { status: 400 },
       );
     }
 
     await prisma.$transaction(async (tx) => {
-      await tx.booking.delete({
+      await tx.booking.update({
         where: { id: bookingId },
+        data: { status: false },
       });
-
       await tx.membership.update({
         where: { clerkId: clerkId },
-        data: {
-          usedSessions: { decrement: 1 },
-        },
+        data: { usedSessions: { decrement: 1 } },
       });
     });
 
-    return NextResponse.json(
-      {
-        message:
-          "Захиалга амжилттай цуцлагдлаа. Хичээлийн эрх буцаан олгогдсон.",
-      },
-      { status: 200 },
-    );
+    return NextResponse.json({
+      message: "Захиалга цуцлагдлаа. 1 credit буцаан нэмэгдлээ.",
+    });
   } catch (error: any) {
     console.error("CANCEL_ERROR:", error);
     return NextResponse.json(

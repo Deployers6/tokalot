@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import {
   CalendarDays,
   BookMarked,
@@ -11,28 +12,98 @@ import {
   UserCircle,
   Ticket,
 } from "lucide-react";
+import { fetchMembership, updateUserProfile } from "@/lib/api";
 
 function cn(...classes: (string | undefined | false)[]) {
   return classes.filter(Boolean).join(" ");
 }
 
-const USED = 3;
-const TOTAL = 8;
+function formatDate(iso: string | null) {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("en-US", { year: "numeric", month: "numeric", day: "numeric" });
+}
 
 export default function ProfilePage() {
   const router = useRouter();
+  const { user } = useUser();
   const [activeTab, setActiveTab] = useState<
     "schedule" | "sessions" | "profile"
   >("profile");
-  const [fullName, setFullName] = useState("Alex Rivers");
-  const [email, setEmail] = useState("alex.rivers@email.com");
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
   const [photo, setPhoto] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [membership, setMembership] = useState<{
+    status: string;
+    startDate: string | null;
+    endDate: string | null;
+    totalSessions: number;
+    usedSessions: number;
+    remainingSessions: number;
+  } | null | undefined>(undefined);
 
-  function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+  // Хуудас нээх бүрт Clerk-г refresh хийж шинэ нэр авна
+  useEffect(() => {
+    if (!user) return;
+    user.reload().then(() => {
+      setFullName(user.fullName ?? "");
+      setEmail(user.primaryEmailAddress?.emailAddress ?? "");
+      if (user.imageUrl) setPhoto(user.imageUrl);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    fetchMembership(user.id)
+      .then((data) => {
+        if (!data) { setMembership(null); return; }
+        setMembership({
+          ...data,
+          remainingSessions: (data.totalSessions ?? 0) - (data.usedSessions ?? 0),
+        });
+      })
+      .catch(() => setMembership(null));
+  }, [user?.id]);
+
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !user) return;
     setPhoto(URL.createObjectURL(file));
+    setPhotoUploading(true);
+    try {
+      await user.setProfileImage({ file });
+      showSuccess("Зураг амжилттай хадгалагдлаа");
+    } catch {
+      alert("Зураг хадгалахад алдаа гарлаа");
+    } finally {
+      setPhotoUploading(false);
+    }
+  }
+
+  async function handleSave() {
+    if (!user) return;
+    setSaving(true);
+    try {
+      const parts = fullName.trim().split(" ");
+      const firstName = parts[0] ?? "";
+      const lastName = parts.slice(1).join(" ");
+      await updateUserProfile(firstName, lastName);
+      await user.reload();
+      setFullName(`${firstName} ${lastName}`.trim());
+      showSuccess("Мэдээлэл амжилттай хадгалагдлаа");
+    } catch (err: any) {
+      alert("Алдаа: " + err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function showSuccess(msg: string) {
+    setSuccessMsg(msg);
+    setTimeout(() => setSuccessMsg(null), 3000);
   }
 
   return (
@@ -77,9 +148,10 @@ export default function ProfilePage() {
             </div>
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="mt-2 text-sm font-semibold text-black"
+              disabled={photoUploading}
+              className="mt-2 text-sm font-semibold text-black disabled:opacity-50"
             >
-              Change Photo
+              {photoUploading ? "Хадгалж байна..." : "Change Photo"}
             </button>
 
             {/* Form */}
@@ -130,54 +202,89 @@ export default function ProfilePage() {
                   Membership Status
                 </label>
 
-                {/* Membership Period */}
-                <div className="flex items-center gap-3 rounded-[12px] border border-slate-200 bg-white px-4 py-4">
-                  <div className="w-9 h-9 rounded-xl bg-sky-50 flex items-center justify-center shrink-0">
-                    <CalendarDays size={18} className="text-sky-500" />
+                {membership === undefined ? (
+                  <div className="rounded-[12px] border border-slate-200 bg-white px-4 py-4 flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 rounded-full border-2 border-sky-400 border-t-transparent animate-spin" />
+                    <span className="text-sm text-slate-400">Ачаалж байна...</span>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase">
-                      Membership Period
-                    </p>
-                    <p className="text-sm font-bold text-slate-800 mt-0.5">
-                      2026/03/31 – 2026/04/30
-                    </p>
+                ) : membership === null ? (
+                  <div className="rounded-[12px] border border-slate-200 bg-white px-4 py-4 text-sm text-slate-400 text-center">
+                    Membership байхгүй байна
                   </div>
-                </div>
+                ) : (
+                  <>
+                    {/* Membership Period */}
+                    <div className="flex items-center gap-3 rounded-[12px] border border-slate-200 bg-white px-4 py-4">
+                      <div className="w-9 h-9 rounded-xl bg-sky-50 flex items-center justify-center shrink-0">
+                        <CalendarDays size={18} className="text-sky-500" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">
+                          Membership Period
+                        </p>
+                        <p className="text-sm font-bold text-slate-800 mt-0.5">
+                          {formatDate(membership.startDate)} – {formatDate(membership.endDate)}
+                        </p>
+                      </div>
+                      <span className={cn(
+                        "text-[10px] font-bold px-2 py-1 rounded-full",
+                        membership.status === "ACTIVE" ? "bg-green-100 text-green-600" :
+                        membership.status === "EXPIRED" ? "bg-red-100 text-red-500" :
+                        "bg-yellow-100 text-yellow-600"
+                      )}>
+                        {membership.status}
+                      </span>
+                    </div>
 
-                {/* Session Credits */}
-                <div className="flex flex-col gap-3 rounded-[12px] border border-slate-200 bg-white px-4 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-sky-50 flex items-center justify-center shrink-0">
-                      <Ticket size={18} className="text-sky-500" />
+                    {/* Session Credits */}
+                    <div className="flex flex-col gap-3 rounded-[12px] border border-slate-200 bg-white px-4 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-sky-50 flex items-center justify-center shrink-0">
+                          <Ticket size={18} className="text-sky-500" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">
+                            Session Credits
+                          </p>
+                          <p className="text-sm font-bold text-slate-800 mt-0.5">
+                            {membership.remainingSessions} / {membership.totalSessions} left
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <div className="w-full h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-sky-500"
+                            style={{
+                              width: membership.totalSessions > 0
+                                ? `${(membership.remainingSessions / membership.totalSessions) * 100}%`
+                                : "0%"
+                            }}
+                          />
+                        </div>
+                        <div className="flex justify-between text-[10px] text-slate-400">
+                          <span>USED: {membership.usedSessions}</span>
+                          <span>TOTAL: {membership.totalSessions}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase">
-                        Session Credits
-                      </p>
-                      <p className="text-sm font-bold text-slate-800 mt-0.5">
-                        {TOTAL - USED} / {TOTAL} left
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <div className="w-full h-[6px] rounded-full bg-slate-200 overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-sky-500"
-                        style={{ width: `${((TOTAL - USED) / TOTAL) * 100}%` }}
-                      />
-                    </div>
-                    <div className="flex justify-between text-[10px] text-slate-400">
-                      <span>USED: {USED}</span>
-                      <span>TOTAL: {TOTAL}</span>
-                    </div>
-                  </div>
-                </div>
+                  </>
+                )}
               </div>
 
+              {successMsg && (
+                <div className="rounded-[12px] bg-green-50 border border-green-200 px-4 py-3 text-sm font-semibold text-green-600 text-center">
+                  {successMsg}
+                </div>
+              )}
+
               {/* Save Button */}
-              <button className="mt-2 w-full rounded-[12px] bg-black py-4 text-sm font-bold text-white hover:bg-neutral-800 transition-colors">
-                Save Changes
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="mt-2 w-full rounded-[12px] bg-black py-4 text-sm font-bold text-white hover:bg-neutral-800 transition-colors disabled:opacity-60"
+              >
+                {saving ? "Хадгалж байна..." : "Save Changes"}
               </button>
             </div>
           </div>
@@ -221,6 +328,7 @@ export default function ProfilePage() {
             <BookMarked size={20} />
             <span className="text-[10px] font-bold">SESSIONS</span>
           </button>
+
         </div>
       </div>
     </div>
