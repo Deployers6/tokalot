@@ -360,7 +360,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Calendar, Pencil } from "lucide-react";
+import { Calendar, Pencil, UserRound } from "lucide-react";
 
 interface UserType {
   clerkId: string;
@@ -380,11 +380,18 @@ interface Props {
   onDelete: (id: string) => void;
 }
 
-const STATUS_BADGE: Record<string, { label: string; bg: string; text: string }> = {
-  ACTIVE:       { label: "Active",        bg: "bg-green-50",  text: "text-green-600" },
-  PENDING:      { label: "Pending",       bg: "bg-yellow-50", text: "text-yellow-600" },
-  EXPIRED:      { label: "Expired",       bg: "bg-red-50",    text: "text-red-500" },
-  NO_MEMBERSHIP:{ label: "No membership", bg: "bg-gray-100",  text: "text-gray-400" },
+const STATUS_BADGE: Record<
+  string,
+  { label: string; bg: string; text: string }
+> = {
+  ACTIVE: { label: "Active", bg: "bg-green-50", text: "text-green-600" },
+  PENDING: { label: "Pending", bg: "bg-yellow-50", text: "text-yellow-600" },
+  EXPIRED: { label: "Expired", bg: "bg-red-50", text: "text-red-500" },
+  NO_MEMBERSHIP: {
+    label: "No membership",
+    bg: "bg-gray-100",
+    text: "text-gray-400",
+  },
 };
 
 const UserCard = ({ user, onDelete }: Props) => {
@@ -398,19 +405,27 @@ const UserCard = ({ user, onDelete }: Props) => {
     <div className="flex items-center justify-between bg-white border border-gray-100 rounded-2xl px-4 py-3 shadow-sm">
       <div className="flex items-center gap-3 flex-1 min-w-0">
         {/* Avatar */}
-        <div className="w-[56px] h-[56px] rounded-xl bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+        {/* <div className="w-[56px] h-[56px] rounded-xl bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
           {user.image ? (
             <img src={user.image} className="w-full h-full object-cover" alt={user.fullName} />
           ) : (
             <span className="text-2xl">🧑</span>
           )}
+        </div> */}
+        <div className="relative">
+          <div className="bg-gray-300 rounded-full h-[50px] w-[50px] flex items-center justify-center">
+            <UserRound className="h-[20px] w-[20px]" />
+          </div>
         </div>
-
         {/* Info */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-extrabold text-gray-900 truncate">{user.fullName}</p>
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${badge.bg} ${badge.text}`}>
+            <p className="font-extrabold text-gray-900 truncate">
+              {user.fullName}
+            </p>
+            <span
+              className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${badge.bg} ${badge.text}`}
+            >
               {badge.label}
             </span>
           </div>
@@ -422,16 +437,21 @@ const UserCard = ({ user, onDelete }: Props) => {
                 <span>
                   Until{" "}
                   {new Date(user.membershipEnd).toLocaleDateString("en-US", {
-                    month: "short", day: "numeric", year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
                   })}
                 </span>
               </div>
             )}
-            {typeof user.remainingSessions === "number" && status !== "NO_MEMBERSHIP" && (
-              <span className={`text-xs font-semibold ${user.remainingSessions === 0 ? "text-red-400" : "text-gray-400"}`}>
-                🎫 {user.remainingSessions} left
-              </span>
-            )}
+            {typeof user.remainingSessions === "number" &&
+              status !== "NO_MEMBERSHIP" && (
+                <span
+                  className={`text-xs font-semibold ${user.remainingSessions === 0 ? "text-red-400" : "text-gray-400"}`}
+                >
+                  🎫 {user.remainingSessions} left
+                </span>
+              )}
           </div>
         </div>
       </div>

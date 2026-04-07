@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  UserRound,
 } from "lucide-react";
 
 const BACKEND_URL = "https://tokalot.vercel.app";
@@ -71,7 +72,6 @@ const MONTHS = [
 ];
 const DAYS = ["S", "M", "T", "W", "T", "F", "S"];
 
-// Огноог цагийн бүсийн зөрүүгүйгээр "YYYY-MM-DD" текст болгох функц
 const toLocalDateString = (d: Date | null) => {
   if (!d) return null;
   const year = d.getFullYear();
@@ -313,6 +313,9 @@ export default function EditUserPage() {
   const [membershipEnd, setMembershipEnd] = useState<Date | null>(null);
   const [showCalendar, setShowCalendar] = useState(false);
 
+  // ── NEW: tracks whether membership was fully deleted in this session ──
+  const [membershipDeleted, setMembershipDeleted] = useState(false);
+
   useEffect(() => {
     if (userId && clerkId) fetchAll();
   }, [userId, clerkId]);
@@ -339,23 +342,17 @@ export default function EditUserPage() {
       setFullName(found.fullName ?? "");
 
       const memRes = await fetch(`${BACKEND_URL}/api/admin/membership`, {
-        headers: {
-          "x-user-id": clerkId,
-          "x-admin-id": userId ?? "",
-        },
+        headers: { "x-user-id": clerkId, "x-admin-id": userId ?? "" },
       });
 
       let memData: MembershipData | null = null;
-      if (memRes.ok) {
-        memData = await memRes.json();
-      }
+      if (memRes.ok) memData = await memRes.json();
 
       setMembership(memData);
       setMembershipStatus(normalizeStatus(memData?.status));
       setSessionUsed(memData?.usedSessions ?? 0);
       setSessionTotal(memData?.totalSessions ?? 0);
 
-      // Ирсэн огноог JS Date болгохдоо цагийн бүсийн нөлөөгүйгээр салгаж авна
       if (memData?.startDate) {
         const parts = memData.startDate.split("T")[0].split("-");
         setMembershipStart(
@@ -386,8 +383,9 @@ export default function EditUserPage() {
   const handleSave = async () => {
     try {
       setSaving(true);
-
       const parts = fullName.trim().split(" ");
+
+      // Always save the user profile
       await fetch(`${BACKEND_URL}/api/admin/patch-user`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -399,22 +397,21 @@ export default function EditUserPage() {
         }),
       });
 
-      // ХАМГИЙН ЧУХАЛ: .toISOString() биш toLocalDateString() ашиглана
-      await fetch(`${BACKEND_URL}/api/admin/membership`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "x-user-id": clerkId,
-        },
-        body: JSON.stringify({
-          clerkId,
-          startDate: toLocalDateString(membershipStart),
-          endDate: toLocalDateString(membershipEnd),
-          totalSessions: sessionTotal,
-          usedSessions: sessionUsed,
-          status: membershipStatus,
-        }),
-      });
+      // Only PATCH membership if it was NOT deleted in this session
+      if (!membershipDeleted) {
+        await fetch(`${BACKEND_URL}/api/admin/membership`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", "x-user-id": clerkId },
+          body: JSON.stringify({
+            clerkId,
+            startDate: toLocalDateString(membershipStart),
+            endDate: toLocalDateString(membershipEnd),
+            totalSessions: sessionTotal,
+            usedSessions: sessionUsed,
+            status: membershipStatus,
+          }),
+        });
+      }
 
       router.back();
     } catch (err) {
@@ -435,6 +432,36 @@ export default function EditUserPage() {
       router.back();
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleDeleteMembership = async () => {
+    setShowStatusDropdown(false);
+    if (!confirm("Энэ хэрэглэгчийн membership-г устгах уу?")) return;
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/admin/membership`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": clerkId,
+        },
+        body: JSON.stringify({ clerkId }),
+      });
+      if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
+
+      // Reset all membership UI state
+      setMembership(null);
+      setMembershipStatus("PENDING");
+      setSessionUsed(0);
+      setSessionTotal(0);
+      setMembershipStart(null);
+      setMembershipEnd(null);
+
+      // ── Mark as deleted so handleSave won't re-create it ──
+      setMembershipDeleted(true);
+    } catch (err) {
+      console.error(err);
+      alert("Membership устгахад алдаа гарлаа");
     }
   };
 
@@ -486,6 +513,7 @@ export default function EditUserPage() {
       `}</style>
 
       <div className="min-h-screen bg-white flex flex-col">
+        {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 bg-gray-900 sticky top-0 z-40">
           <button
             onClick={() => router.back()}
@@ -504,8 +532,9 @@ export default function EditUserPage() {
         </div>
 
         <div className="flex-1 overflow-y-auto pb-32">
+          {/* Avatar */}
           <div className="flex flex-col items-center pt-8 pb-6">
-            <div className="relative">
+            {/* <div className="relative">
               <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-[#20BEF9] bg-gray-100">
                 {user.image ? (
                   <img
@@ -525,7 +554,13 @@ export default function EditUserPage() {
             </div>
             <p className="mt-2 text-sm text-gray-400 font-medium">
               Change Photo
-            </p>
+            </p> */}
+            <div className="relative">
+              <div className="bg-gray-300 rounded-full h-[90px] w-[90px] flex items-center justify-center">
+                <UserRound className="h-[60px] w-[60px]" />
+              </div>
+            </div>
+
             {membershipStatus === "EXPIRED" && (
               <div className="mt-2 px-3 py-1 bg-red-50 border border-red-200 rounded-full">
                 <span className="text-xs font-bold text-red-500">
@@ -536,6 +571,7 @@ export default function EditUserPage() {
           </div>
 
           <div className="px-5 space-y-4">
+            {/* Full Name */}
             <div>
               <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5 block">
                 Full Name
@@ -551,6 +587,7 @@ export default function EditUserPage() {
               </div>
             </div>
 
+            {/* Membership Status */}
             <div>
               <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5 block">
                 Membership Status
@@ -561,22 +598,26 @@ export default function EditUserPage() {
                   className="w-full flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 border border-gray-200"
                 >
                   <div className="flex items-center gap-2">
-                    <span>{statusCfg.icon}</span>
+                    <span className="text-base">{statusCfg.icon}</span>
                     <span
                       className={`text-sm font-semibold ${statusCfg.color}`}
                     >
                       {statusCfg.label}
                     </span>
                   </div>
-                  <ChevronDown className="h-4 w-4 text-gray-400" />
+                  <ChevronDown
+                    className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${showStatusDropdown ? "rotate-180" : ""}`}
+                  />
                 </button>
+
                 {showStatusDropdown && (
                   <>
                     <div
                       className="fixed inset-0 z-40"
                       onClick={() => setShowStatusDropdown(false)}
                     />
-                    <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
+                    <div className="absolute z-50 top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
+                      {/* Status options */}
                       {(Object.keys(STATUS_CONFIG) as MembershipStatus[]).map(
                         (s) => (
                           <button
@@ -585,26 +626,43 @@ export default function EditUserPage() {
                               setMembershipStatus(s);
                               setShowStatusDropdown(false);
                             }}
-                            className={`w-full px-5 py-4 flex items-center justify-center gap-2 text-sm font-semibold border-b border-gray-50 last:border-0 hover:bg-gray-50 ${membershipStatus === s ? "bg-blue-50" : ""}`}
+                            className={`w-full px-5 py-3.5 flex items-center gap-3 text-sm font-semibold border-b border-gray-50 hover:bg-gray-50 transition-colors ${
+                              membershipStatus === s ? "bg-blue-50" : ""
+                            }`}
                           >
-                            <span>{STATUS_CONFIG[s].icon}</span>
+                            <span className="text-base">
+                              {STATUS_CONFIG[s].icon}
+                            </span>
                             <span className={STATUS_CONFIG[s].color}>
                               {STATUS_CONFIG[s].label}
                             </span>
                             {membershipStatus === s && (
-                              <span className="ml-auto text-[#20BEF9] text-xs">
+                              <span className="ml-auto text-[#20BEF9] text-xs font-bold">
                                 ✓
                               </span>
                             )}
                           </button>
                         ),
                       )}
+
+                      {/* Divider */}
+                      <div className="h-px bg-gray-100 mx-4" />
+
+                      {/* Delete Membership */}
+                      <button
+                        onClick={handleDeleteMembership}
+                        className="w-full px-5 py-3.5 flex items-center gap-3 text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span>Delete Membership</span>
+                      </button>
                     </div>
                   </>
                 )}
               </div>
             </div>
 
+            {/* Membership Period */}
             <div>
               <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5 block">
                 Membership Period
@@ -638,7 +696,6 @@ export default function EditUserPage() {
                       s.setHours(0, 0, 0, 0);
                       const e = new Date(membershipEnd);
                       e.setHours(0, 0, 0, 0);
-
                       const total = e.getTime() - s.getTime();
                       const elapsed = Math.min(
                         Math.max(now.getTime() - s.getTime(), 0),
@@ -664,6 +721,7 @@ export default function EditUserPage() {
               )}
             </div>
 
+            {/* Session Credits */}
             <div className="bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-3">
@@ -685,6 +743,7 @@ export default function EditUserPage() {
                           className="w-12 text-sm font-bold text-gray-900 bg-white border border-gray-200 rounded-lg px-2 py-0.5 outline-none"
                         />
                         <span className="text-sm text-gray-400 font-semibold">
+                          {" "}
                           /{" "}
                         </span>
                         <input
@@ -726,6 +785,7 @@ export default function EditUserPage() {
               </div>
             </div>
 
+            {/* Session History */}
             {membership?.history && membership.history.length > 0 && (
               <div>
                 <h3 className="text-sm font-extrabold text-gray-900 mb-3">
@@ -764,6 +824,7 @@ export default function EditUserPage() {
               </div>
             )}
 
+            {/* Delete Profile */}
             <button
               onClick={handleDelete}
               className="w-full flex items-center justify-center gap-2 text-red-500 text-sm font-semibold py-3"
@@ -773,6 +834,7 @@ export default function EditUserPage() {
           </div>
         </div>
 
+        {/* Bottom Cancel */}
         <div className="fixed bottom-0 left-0 right-0 px-5 pb-8 pt-3 bg-white border-t border-gray-100">
           <button
             onClick={() => router.back()}
