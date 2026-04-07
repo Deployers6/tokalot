@@ -3210,7 +3210,7 @@ export default function EditUserPage() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": clerkId, // ← ЭНЭ НЭМЭХ
+          "x-user-id": clerkId,
         },
         body: JSON.stringify({
           clerkId,
