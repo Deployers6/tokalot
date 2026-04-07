@@ -30,8 +30,9 @@ interface Section {
   endTime: string;
   capacity: number;
   status: boolean;
-  enrolledCount?: number;
+  bookings?: any[]; // 🔥 enrolledCount-ийн оронд bookings массив
 }
+
 const BACKEND_URL = "https://tokalot.vercel.app";
 
 function formatTime(iso: string) {
@@ -55,7 +56,6 @@ function isoToDateInput(iso: string) {
   }
 }
 
-// UTC цагийг ШУУД авна, ямар ч хөрвүүлэлтгүй
 function isoToTimeInput(iso: string) {
   try {
     const timePart = iso.includes("T") ? iso.split("T")[1] : iso;
@@ -66,7 +66,7 @@ function isoToTimeInput(iso: string) {
   }
 }
 
-// ── Calendar Picker ──────────────────────────────────────────────
+// ── CalendarPicker (хэвээр) ──────────────────────────────────────
 function CalendarPicker({
   selectedDate,
   onSelect,
@@ -84,7 +84,6 @@ function CalendarPicker({
   const [viewMonth, setViewMonth] = useState(
     () => parseInt(selectedDate.split("-")[1]) - 1,
   );
-
   const MONTHS = [
     "January",
     "February",
@@ -100,10 +99,8 @@ function CalendarPicker({
     "December",
   ];
   const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
-
   const firstDay = new Date(viewYear, viewMonth, 1).getDay();
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-
   const prevMonth = () => {
     if (viewMonth === 0) {
       setViewMonth(11);
@@ -116,7 +113,6 @@ function CalendarPicker({
       setViewYear((y) => y + 1);
     } else setViewMonth((m) => m + 1);
   };
-
   const cells: (number | null)[] = [
     ...Array(firstDay).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
@@ -149,7 +145,6 @@ function CalendarPicker({
             <ChevronRight className="h-4 w-4 text-gray-600" />
           </button>
         </div>
-
         <div className="grid grid-cols-7 mb-1">
           {DAYS.map((d) => (
             <div
@@ -160,7 +155,6 @@ function CalendarPicker({
             </div>
           ))}
         </div>
-
         <div className="grid grid-cols-7 gap-y-1">
           {cells.map((day, i) => {
             if (!day) return <div key={i} />;
@@ -187,12 +181,12 @@ function CalendarPicker({
             );
           })}
         </div>
-
         <button
           onClick={() => {
             const t = new Date();
-            const todayStr = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
-            onSelect(todayStr);
+            onSelect(
+              `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`,
+            );
             onClose();
           }}
           className="mt-4 w-full py-2.5 rounded-xl bg-[#E0F8FF] text-[#006688] font-extrabold text-sm tracking-widest"
@@ -204,7 +198,7 @@ function CalendarPicker({
   );
 }
 
-// ── EditForm ─────────────────────────────────────────────────────
+// ── EditForm (хэвээр) ────────────────────────────────────────────
 function EditForm({
   section,
   teachers,
@@ -224,8 +218,8 @@ function EditForm({
   const [form, setForm] = useState({
     title: section.title,
     sessionDate: isoToDateInput(section.StartTime),
-    startTime: isoToTimeInput(section.StartTime), // UTC шууд
-    endTime: isoToTimeInput(section.endTime), // UTC шууд
+    startTime: isoToTimeInput(section.StartTime),
+    endTime: isoToTimeInput(section.endTime),
     capacity: String(section.capacity),
     teacherId: section.teacherId,
   });
@@ -233,7 +227,6 @@ function EditForm({
   const set = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
 
-  // Хөрвүүлэлтгүй, шууд ISO болгоно
   function localToUTC(dateStr: string, timeStr: string): string {
     return `${dateStr}T${timeStr}:00`;
   }
@@ -242,7 +235,6 @@ function EditForm({
     e.preventDefault();
     setLoading(true);
     setError("");
-
     try {
       const payload = {
         title: form.title,
@@ -251,7 +243,6 @@ function EditForm({
         endTime: localToUTC(form.sessionDate, form.endTime),
         capacity: form.capacity,
       };
-
       const res = await fetch(
         `${BACKEND_URL}/api/admin/patch.session/${section.id}`,
         {
@@ -260,15 +251,12 @@ function EditForm({
           body: JSON.stringify(payload),
         },
       );
-
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Update failed");
+        const e = await res.json();
+        throw new Error(e.error || "Update failed");
       }
-
       onSuccess();
     } catch (err: any) {
-      console.error("Update Error:", err);
       setError(err.message || "Алдаа гарлаа");
     } finally {
       setLoading(false);
@@ -306,13 +294,11 @@ function EditForm({
         </div>
         <h2 className="font-extrabold text-lg">Edit Session</h2>
       </div>
-
       {error && (
         <div className="bg-red-100 text-red-700 p-3 rounded-xl text-sm">
           ⚠️ {error}
         </div>
       )}
-
       <div className="bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-3 flex flex-col gap-1">
         <label className="text-xs font-extrabold tracking-widest text-gray-500">
           SESSION NAME
@@ -326,7 +312,6 @@ function EditForm({
           className={inputCls}
         />
       </div>
-
       <div className="bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-3 flex flex-col gap-1">
         <label className="text-xs font-extrabold tracking-widest text-gray-500">
           SESSION DATE
@@ -340,7 +325,6 @@ function EditForm({
           className={inputCls}
         />
       </div>
-
       <div className="flex gap-3">
         <div className="flex-1 bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-3 flex flex-col gap-1">
           <label className="text-xs font-extrabold tracking-widest text-gray-500">
@@ -369,7 +353,6 @@ function EditForm({
           />
         </div>
       </div>
-
       <div className="bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-3 flex flex-col gap-1">
         <label className="text-xs font-extrabold tracking-widest text-gray-500">
           SEATS
@@ -383,7 +366,6 @@ function EditForm({
           className={inputCls}
         />
       </div>
-
       <div className="bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-3 flex flex-col gap-1">
         <label className="text-xs font-extrabold tracking-widest text-gray-500">
           TEACHER
@@ -403,7 +385,6 @@ function EditForm({
           ))}
         </select>
       </div>
-
       <button
         type="submit"
         disabled={loading}
@@ -412,7 +393,6 @@ function EditForm({
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
         {loading ? "SAVING..." : "SAVE SESSION"}
       </button>
-
       <button
         type="button"
         onClick={handleDelete}
@@ -426,7 +406,7 @@ function EditForm({
   );
 }
 
-// ── SessionCard ───────────────────────────────────────────────────
+// ── SessionCard — bookings логиктой, 2-р файлын UI/UX ────────────
 function SessionCard({
   section,
   onEdit,
@@ -434,12 +414,12 @@ function SessionCard({
   section: Section;
   onEdit: () => void;
 }) {
-  const enrolled = section.enrolledCount ?? 0;
+  const bookings = section.bookings?.length ?? 0; // 🔥 эхний файлын логик
   const cap = section.capacity;
   const cancelled = !section.status;
-  const fullyBooked = !cancelled && enrolled >= cap;
-  const fillPct = Math.min((enrolled / cap) * 100, 100);
-  const color = cancelled ? "#fca5a5" : enrolled >= cap ? "#f59e0b" : "#20BEF9";
+  const fullyBooked = !cancelled && bookings >= cap;
+  const fillPct = Math.min((bookings / cap) * 100, 100);
+  const color = cancelled ? "#fca5a5" : bookings >= cap ? "#f59e0b" : "#20BEF9";
 
   return (
     <div
@@ -474,7 +454,7 @@ function SessionCard({
         </span>
         <span className="flex items-center gap-1 text-sm text-gray-500">
           <Users className="h-3.5 w-3.5" />
-          {enrolled}/{cap} Seats
+          {bookings}/{cap} Bookings {/* 🔥 "Bookings" гэж харуулна */}
         </span>
       </div>
 
@@ -525,12 +505,10 @@ export default function Session() {
     setSheet(s);
     requestAnimationFrame(() => setVisible(true));
   };
-
   const closeSheet = () => {
     setVisible(false);
     timer.current = setTimeout(() => setSheet(null), 350);
   };
-
   useEffect(
     () => () => {
       if (timer.current) clearTimeout(timer.current);
@@ -538,13 +516,28 @@ export default function Session() {
     [],
   );
 
+  // 🔥 Эхний файлын fetchSections логик — section бүр дээр bookings fetch
   const fetchSections = async () => {
     try {
       setLoadingSections(true);
       const res = await fetch(`${BACKEND_URL}/api/admin-section`);
-      if (!res.ok) throw new Error("failed");
       const data = await res.json();
-      setSections(Array.isArray(data) ? data : []);
+      const list = data.sections || data.data || data.section || data || [];
+      const base = Array.isArray(list) ? list : [list];
+
+      const full = await Promise.all(
+        base.map(async (s: Section) => {
+          try {
+            const r = await fetch(`${BACKEND_URL}/api/admin-section/${s.id}`);
+            const d = await r.json();
+            const sec = d.section || d;
+            return { ...s, bookings: sec.bookings || [] };
+          } catch {
+            return { ...s, bookings: [] };
+          }
+        }),
+      );
+      setSections(full);
     } catch {
       setSections([]);
     } finally {
@@ -582,7 +575,6 @@ export default function Session() {
   const filteredSections = sections.filter(
     (s) => isoToDateInput(s.StartTime) === selectedDate,
   );
-
   const activeDates = new Set(sections.map((s) => isoToDateInput(s.StartTime)));
 
   const MONTHS = [
@@ -601,7 +593,6 @@ export default function Session() {
   ];
   const [selYear, selMonth] = selectedDate.split("-").map(Number);
   const headerLabel = `${MONTHS[selMonth - 1]} ${selYear}`;
-
   const selDateObj = new Date(`${selectedDate}T00:00:00`);
   const dateLabel = selDateObj.toLocaleDateString("en-US", {
     weekday: "long",
