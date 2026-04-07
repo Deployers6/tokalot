@@ -40,7 +40,17 @@ export async function GET(req: Request) {
           data: { status: false },
         });
 
-      
+        // Бүх захиалгас-ын usedSessions буцаах
+        for (const booking of session.bookings) {
+          await prisma.membership.update({
+            where: { clerkId: booking.clerkId },
+            data: {
+              usedSessions: { decrement: 1 },
+            },
+          });
+        }
+
+        // Email илгээх
         for (const booking of session.bookings) {
           if (booking.user.email) {
             try {

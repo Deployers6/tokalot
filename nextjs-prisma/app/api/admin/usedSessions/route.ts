@@ -10,26 +10,26 @@ export async function POST(req: NextRequest) {
     if (!clerkId || !sectionId) {
       return NextResponse.json(
         { error: "clerkId болон sectionId заавал шаардлагатай" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
     // 2. Гишүүнчлэлийг нь шалгах
     const membership = await prisma.membership.findUnique({
-      where: { clerkId },
+      where: { clerkId }
     });
 
     if (!membership) {
       return NextResponse.json(
         { error: "Танд бүртгэлтэй гишүүнчлэл алга" },
-        { status: 403 },
+        { status: 403 }
       );
     }
 
     if (membership.status !== "ACTIVE") {
       return NextResponse.json(
         { error: "Таны гишүүнчлэл идэвхгүй байна" },
-        { status: 403 },
+        { status: 403 }
       );
     }
 
@@ -37,20 +37,21 @@ export async function POST(req: NextRequest) {
     if (membership.usedSessions >= membership.totalSessions) {
       return NextResponse.json(
         { error: "Таны хичээлийн эрх (сесс) дууссан байна" },
-        { status: 403 },
+        { status: 403 }
       );
     }
 
     // 4. Transaction ашиглан Booking үүсгэж, сессийг нь хасах
     const result = await prisma.$transaction(async (tx) => {
+      
       // А. Хичээл байгаа эсэхийг шалгах
       const section = await tx.section.findUnique({
         where: { id: sectionId },
-        include: { _count: { select: { bookings: true } } },
+        include: { _count: { select: { bookings: true } } }
       });
 
       if (!section) throw new Error("SECTION_NOT_FOUND");
-
+      
       // Б. Анги дүүрсэн эсэхийг шалгах
       if (section._count.bookings >= section.capacity) {
         throw new Error("SECTION_FULL");
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
 
       // В. Өмнө нь бүртгүүлсэн эсэхийг шалгах (Давхар бүртгэлээс сэргийлэх)
       const existing = await tx.booking.findFirst({
-        where: { clerkId, sectionId },
+        where: { clerkId, sectionId }
       });
       if (existing) throw new Error("ALREADY_BOOKED");
 
@@ -68,15 +69,15 @@ export async function POST(req: NextRequest) {
           clerkId: clerkId,
           sectionId: sectionId,
           status: true,
-        },
+        }
       });
 
-      // Д. Membership-ийн usedSessions-ийг 1-ээр нэмж
+      // Д. Membership-ийн usedSessions-ийг 1-ээр нэмэх
       await tx.membership.update({
         where: { clerkId: clerkId },
         data: {
           usedSessions: { increment: 1 },
-        },
+        }
       });
 
       return newBooking;
@@ -84,8 +85,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(
       { message: "Амжилттай бүртгүүллээ", data: result },
-      { status: 201 },
+      { status: 201 }
     );
+
   } catch (error: any) {
     console.error("BOOKING_ERROR_LOG:", error);
 
@@ -97,11 +99,8 @@ export async function POST(req: NextRequest) {
     };
 
     return NextResponse.json(
-      {
-        error: errorMap[error.message] || "Захиалга хийхэд алдаа гарлаа",
-        details: error.message,
-      },
-      { status: errorMap[error.message] ? 400 : 500 },
+      { error: errorMap[error.message] || "Захиалга хийхэд алдаа гарлаа", details: error.message },
+      { status: errorMap[error.message] ? 400 : 500 }
     );
   }
 }
