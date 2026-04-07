@@ -18,5 +18,5 @@ export async function GET() {
     return NextResponse.redirect(new URL("/admin", base));
   }
 
-  return NextResponse.redirect(new URL("/user/dashboard", base));
+  return NextResponse.redirect(new URL("/user", base));
 }

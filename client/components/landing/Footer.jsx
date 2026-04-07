@@ -5,7 +5,7 @@ export const Footer = () => {
       <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-sky-900/10 blur-[100px] rounded-full" />
 
       <div
-        className="w-full max-w-[1200px] flex items-center justify-between px-16 py-12 relative z-10
+        className="w-full max-w-[1200] flex items-center justify-between px-16 py-12 relative z-10
                    max-md:flex-col max-md:items-center max-md:text-center max-md:gap-10 max-md:px-6 max-md:py-10"
       >
         {/* Logo & Title Section */}
@@ -43,7 +43,7 @@ export const Footer = () => {
         <div className="flex flex-col md:flex-row md:items-center gap-12">
           {/* Contact Details */}
           <div
-            className="text-[12px] flex gap-[40px] 
+            className="text-[12px] flex gap-[40] 
                max-md:grid max-md:grid-cols-2 max-md:gap-x-12 max-md:gap-y-4 max-md:text-center"
           >
             <div className="space-y-1.5">
