@@ -17,13 +17,12 @@ export async function GET(req: Request) {
     // 2. 48 цагийн хязгаарыг тогтоох
     const limitUTC = new Date(nowUTC.getTime() + 48 * 60 * 60 * 1000);
 
-    // 3. Хичээлүүдийг шүүх (Одооноос эхлээд 48 цагийн доторх бүх нээлттэй хичээлүүд)
     const sessionsToCheck = await prisma.section.findMany({
       where: {
         status: true,
         StartTime: {
-          gte: nowUTC,   // Одооноос хойшхи
-          lte: limitUTC, // 48 цагийн доторх
+          gte: nowUTC,  
+          lte: limitUTC, 
         },
       },
       include: {
