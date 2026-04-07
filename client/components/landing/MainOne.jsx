@@ -1,36 +1,54 @@
+import React from "react";
+
 export const MainOne = () => {
   return (
-    <section className="w-full h-[1024px] bg-[#00161D] flex items-center justify-center px-12 py-12 max-md:h-[795px] max-md:items-end">
-      <div className="flex flex-row max-md:flex-col items-center gap-16 max-md:gap-10 max-w-7xl w-full ">
-        <div className="w-full max-w-2xl space-y-6 max-md:space-y-5 max-md:text-center">
-          <p className="text-sm text-[#89D6FF] font-semibold tracking-widest max-md:text-xs max-md:text-start">
-            THE MIDNIGHT EDITORIAL EXPERIENCE
-          </p>
+    <section className="relative w-full min-h-[1024px] flex items-center justify-center px-6 md:px-12 py-20 max-md:min-h-screen overflow-hidden">
+      {/* Mobile Background Image (Зөвхөн Mobile-д харагдана) */}
+      <div className="absolute inset-0 md:hidden">
+        <img
+          src="profile.jpeg"
+          alt="Background"
+          className="w-full h-full object-cover grayscale-[30%]"
+        />
+        {/* Бичвэрийг уншигдахуйц болгохын тулд дээрээс нь харанхуйлах давхарга */}
+        <div className="absolute inset-0 bg-[#00161D]/80"></div>
+      </div>
 
-          <h1 className="text-7xl text-[#CEE7F0] font-extrabold leading-tight max-md:text-3xl max-md:text-start">
-            Master English <br className="max-md:hidden" />
-            In the Shadows.
-          </h1>
+      {/* Desktop Background (Зөвхөн Desktop-д зориулсан өнгө) */}
+      <div className="absolute inset-0 -z-10 bg-[#00161D] hidden md:block"></div>
 
-          <p className="text-lg text-[#BCC8D1] leading-relaxed max-md:text-sm max-md:text-start">
-            Tokalot is an exclusive community for advanced speakers. No
-            textbooks, no exams. Just profound conversations under the midnight
-            sky.
-          </p>
+      <div className="relative z-10 flex flex-col md:flex-row items-center gap-12 md:gap-16 max-w-7xl w-full">
+        {/* Text Content */}
+        <div className="w-full md:max-w-2xl space-y-8 text-center md:text-left">
+          <div className="space-y-4">
+            <p className="text-sm text-[#89D6FF] font-semibold tracking-[0.2em] uppercase">
+              THE MIDNIGHT EDITORIAL EXPERIENCE
+            </p>
 
-          <div className="flex gap-4 max-md:flex-col max-md:items-center">
-            <button className="px-6 py-4 rounded-lg bg-[#89D6FF] text-[#004963] font-bold hover:bg-[#6ecbff] transition max-md:w-full max-md:py-3">
-              Join as Student
-            </button>
+            <h1 className="text-4xl md:text-7xl text-[#CEE7F0] font-extrabold leading-[1.1] tracking-tight">
+              Master English <br className="hidden md:block" />
+              In the Shadows.
+            </h1>
 
-            <button className="px-6 py-4 rounded-lg bg-[#162D34] text-[#89D6FF] font-bold hover:bg-[#1f3f47] transition max-md:w-full max-md:py-3">
-              Admin Portal
-            </button>
+            <p className="text-base md:text-lg text-[#BCC8D1] leading-relaxed max-w-xl mx-auto md:mx-0">
+              Tokalot is an exclusive community for advanced speakers. No
+              textbooks, no exams. Just profound conversations under the
+              midnight sky.
+            </p>
           </div>
         </div>
 
-        <div className="w-full max-w-xl h-[560px] bg-[#21383F99] rounded-2xl overflow-hidden flex items-center justify-center hidden md:flex">
-          <img src="test.png" className="w-full h-full object-cover" />
+        {/* Desktop Image (Гар утас дээр нуугдана) */}
+        <div className="hidden md:block w-full md:max-w-xl h-[600px] relative group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-sky-500/20 to-blue-500/20 rounded-2xl blur-2xl opacity-50 group-hover:opacity-75 transition duration-1000"></div>
+
+          <div className="relative w-full h-full bg-[#162D34] rounded-2xl overflow-hidden border border-white/5">
+            <img
+              src="profile.jpeg"
+              alt="Profile"
+              className="w-full h-full object-cover grayscale-[20%] hover:grayscale-0 transition-all duration-700 scale-105 hover:scale-100"
+            />
+          </div>
         </div>
       </div>
     </section>

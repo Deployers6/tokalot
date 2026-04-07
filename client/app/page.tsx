@@ -1,5 +1,4 @@
 "use client";
-
 import { Header } from "@/components/landing/Header";
 import { Footer } from "@/components/landing/Footer";
 import { MainOne } from "@/components/landing/MainOne";
@@ -13,9 +12,18 @@ export default function HomePage() {
       <Header />
       <main className="flex-grow">
         <MainOne />
-        <MainTwo />
-        <MainThree />
-        <MainFour />
+
+        <section id="how-it-works">
+          <MainTwo />
+        </section>
+
+        <section id="mentors">
+          <MainThree />
+        </section>
+
+        <section id="membership">
+          <MainFour />
+        </section>
       </main>
       <Footer />
     </div>
