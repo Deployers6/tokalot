@@ -238,39 +238,43 @@ function EditForm({
 
   // EditForm доторх handleSave хэсэг
   const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  e.preventDefault();
+  setLoading(true);
+  setError("");
 
-    try {
-      const payload = {
-        title: form.title,
-        teacherId: form.teacherId, // Сонгосон багшийн ID
-        startTime: `${form.sessionDate}T${form.startTime}:00`,
-        endTime: `${form.sessionDate}T${form.endTime}:00`,
-        capacity: String(form.capacity), // Backend-д parseInt хийж байгаа тул string явуулж болно
-      };
+  try {
+    const payload = {
+      title: form.title,
+      teacherId: form.teacherId, // Сонгосон багшийн ID-г заавал явуулна
+      startTime: `${form.sessionDate}T${form.startTime}:00`, // Backend 'startTime' гэж хүлээж авч байгаа
+      endTime: `${form.sessionDate}T${form.endTime}:00`,
+      capacity: String(form.capacity),
+    };
 
-      const res = await fetch(
-        `${BACKEND_URL}/api/admin/sessions/${section.id}`, // URL-аа зөв эсэхийг шалгаарай
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        },
-      );
-
-      if (res.ok) {
-        onSuccess(); // Энэ нь fetchSections-ийг дуудаж бүх жагсаалтыг шинэчилнэ
-      } else {
-        throw new Error("Update failed");
+    // 1. URL-аа файлтайгаа ижил болгох: /api/admin/sessions/
+    const res = await fetch(
+      `${BACKEND_URL}/api/admin/sessions/${section.id}`, 
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       }
-    } catch (err) {
-      setError("Алдаа гарлаа");
-    } finally {
-      setLoading(false);
-    }
-  };
+    );
 
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || "Update failed");
+    }
+
+    // 2. Амжилттай болсны дараа fetchSections() дуудагдаж багшийн нэр шинэчлэгдэнэ
+    onSuccess(); 
+  } catch (err: any) {
+    console.error("Update Error:", err);
+    setError(err.message || "Алдаа гарлаа");
+  } finally {
+    setLoading(false);
+  }
+};
   const handleDelete = async () => {
     if (!confirm("Энэ session-г устгах уу?")) return;
     setDeleting(true);
