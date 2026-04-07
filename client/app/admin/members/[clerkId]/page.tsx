@@ -3142,9 +3142,19 @@ export default function EditUserPage() {
       setUser(found);
       setFullName(found.fullName ?? "");
 
+      // const memRes = await fetch(
+      //   `${BACKEND_URL}/api/admin/membership?clerkId=${clerkId}`,
+      //   { headers: { "x-admin-id": userId ?? "" } },
+      // );
+
       const memRes = await fetch(
-        `${BACKEND_URL}/api/admin/membership?clerkId=${clerkId}`,
-        { headers: { "x-admin-id": userId ?? "" } },
+        `${BACKEND_URL}/api/admin/membership`, // query parameter хасна
+        {
+          headers: {
+            "x-user-id": clerkId, // ← header-р илгээнэ
+            "x-admin-id": userId ?? "",
+          },
+        },
       );
 
       let memData: MembershipData | null = null;
@@ -3183,9 +3193,25 @@ export default function EditUserPage() {
         }),
       });
 
+      // await fetch(`${BACKEND_URL}/api/admin/membership`, {
+      //   method: "PATCH",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify({
+      //     clerkId,
+      //     startDate: membershipStart?.toISOString(),
+      //     endDate: membershipEnd?.toISOString(),
+      //     totalSessions: sessionTotal,
+      //     usedSessions: sessionUsed,
+      //     status: membershipStatus,
+      //   }),
+      // });
+
       await fetch(`${BACKEND_URL}/api/admin/membership`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": clerkId,
+        },
         body: JSON.stringify({
           clerkId,
           startDate: membershipStart?.toISOString(),
