@@ -1,34 +1,73 @@
 export const MainTwo = () => {
+  const steps = [
+    {
+      roman: "I",
+      title: "Registration",
+      description:
+        "Create your account and introduce yourself to the Tokalot community.",
+    },
+    {
+      roman: "II",
+      title: "Become a Member",
+      description:
+        "Choose your membership plan and get access to exclusive café sessions.",
+    },
+    {
+      roman: "III",
+      title: "Book a Session",
+      description:
+        "Pick your preferred date and time to start your English journey.",
+    },
+  ];
+
   return (
-    <div className="w-full h-[586px] max-md:h-auto bg-[#051F25] flex items-center justify-center max-md:px-6 max-md:py-16 max-md:bg-[#FFFFFF]">
-      <div className="max-md:w-full">
-        <div className="flex flex-col space-y-[16px] max-md:text-center">
-          <p className="max-md:hidden text-[36px] max-md:text-[28px] text-[#CEE7F0]">
+    <section
+      id="how-it-works"
+      className="w-full min-h-[586px] bg-[#051F25] flex items-center justify-center px-6 py-20 
+                 max-md:py-16"
+    >
+      <div className="w-full max-w-7xl">
+        {/* Гарчиг хэсэг */}
+        <div className="flex flex-col space-y-4 max-md:text-center mb-16">
+          <p className="text-[36px] md:text-[48px] font-bold text-[#CEE7F0]">
             How it Works
           </p>
-          <p className="text-[30px] font-bold text-[#071E24] text-start md:hidden">
-            The Methodology
-          </p>
-          <p className="max-md:hidden text-[16px] max-md:text-[14px] text-[#BCC8D1] max-md:max-w-[500px] max-md:mx-auto">
-            The editorial journey from silence to eloquence in three deliberate
+          <p className="text-[#BCC8D1] max-w-lg max-md:mx-auto">
+            Your journey from silence to eloquence in three deliberate
             movements.
           </p>
         </div>
 
-        <div className="flex gap-[48px] pt-[64px] w-full max-md:flex-col max-md:gap-[24px] max-md:pt-[48px]">
-          {[1, 2, 3].map((num) => (
+        {/* Алхмууд (Картууд) */}
+        <div className="flex flex-col md:flex-row gap-8 md:gap-12 w-full">
+          {steps.map((step, index) => (
             <div
-              key={num}
-              className="w-[384px] h-[250px] bg-[#0A232A] rounded-[12px] max-md:bg-[#006688]
-              max-md:w-full max-md:h-[248px] flex items-start p-6"
+              key={index}
+              className="flex-1 min-h-[250px] bg-[#0A232A] rounded-2xl p-8 border border-white/5 
+                         hover:border-sky-400/30 transition-all duration-300 group 
+                         flex flex-col justify-between max-md:items-center max-md:text-center shadow-lg shadow-black/20"
             >
-              <p className="text-[36px] max-md:text-[28px] text-[#89D6FF] font-bold">
-                {String(num).padStart(2, "0")}
+              {/* Ром тоо */}
+              <p
+                className="text-[40px] md:text-[48px] text-[#89D6FF] font-serif font-bold opacity-50 
+                            group-hover:opacity-100 transition-opacity"
+              >
+                {step.roman}
               </p>
+
+              {/* Текст агуулга */}
+              <div className="space-y-2 w-full">
+                <h3 className="text-xl md:text-2xl font-bold text-[#CEE7F0]">
+                  {step.title}
+                </h3>
+                <p className="text-sm md:text-base text-[#BCC8D1] leading-relaxed">
+                  {step.description}
+                </p>
+              </div>
             </div>
           ))}
         </div>
       </div>
-    </div>
+    </section>
   );
 };

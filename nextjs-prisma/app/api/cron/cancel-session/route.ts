@@ -11,100 +11,89 @@ export async function GET(req: Request) {
   }
 
   try {
-    // 1. Одоогийн цагийг UTC-ээр авах (Баазтай тааруулах)
-    const nowUTC = new Date();
-    
-    // 2. 48 цагийн хязгаарыг тогтоох
-    const limitUTC = new Date(nowUTC.getTime() + 48 * 60 * 60 * 1000);
+    const now = new Date();
+    const limit48h = new Date(now.getTime() + 48 * 60 * 60 * 1000);
 
-    const sessionsToCheck = await prisma.section.findMany({
+    // 1. ШҮҮЛТҮҮР: Зөвхөн 48 цаг тулсан болон өнгөрсөн бүх хичээлийг авна.
+    // 'status: true' гэж шүүхгүй, учир нь бид бүгдийг нь "баттай" хаахыг хүсэж байгаа.
+    const sessions = await prisma.section.findMany({
       where: {
-        status: true,
-        StartTime: {
-          gte: nowUTC,  
-          lte: limitUTC, 
-        },
+        StartTime: { lte: limit48h } 
       },
       include: {
-        bookings: {
-          include: {
-            user: true,
-          },
-        },
+        bookings: { include: { user: true } },
         _count: { select: { bookings: true } },
       },
     });
 
-    const cancelledIds: string[] = [];
+    const sessionUpdates: any[] = [];
+    const membershipUpdates: any[] = [];
+    const emailsToNotify: any[] = [];
 
-    for (const session of sessionsToCheck) {
-      // Хүн хүрээгүй бол (3-аас бага)
-      if (session._count.bookings < 3) {
-        
-        // Transaction ашиглах нь илүү найдвартай (Хичээл хаах + Эрх буцаах)
-        await prisma.$transaction(async (tx) => {
-          // А. Хичээлийг цуцлах
-          await tx.section.update({
+    for (const session of sessions) {
+      const startTime = new Date(session.StartTime);
+
+      // --- ЛОГИК А: ЦУЦЛАХ БОЛОН ЭРХ БУЦААХ (48 цаг тулсан, хүн хүрээгүй, ОДОО НЭЭЛТТЭЙ байгаа бол) ---
+      if (session._count.bookings < 3 && session.status === true) {
+        sessionUpdates.push(
+          prisma.section.update({
             where: { id: session.id },
-            data: { status: false },
-          });
+            data: { status: false }
+          })
+        );
 
-          // Б. Захиалга өгсөн хүмүүсийн UsedSessions-ийг буцаах
-          for (const booking of session.bookings) {
-            await tx.membership.update({
+        for (const booking of session.bookings) {
+          membershipUpdates.push(
+            prisma.membership.update({
               where: { clerkId: booking.clerkId },
-              data: {
-                usedSessions: { decrement: 1 },
-              },
+              data: { usedSessions: { decrement: 1 } }
+            })
+          );
+          
+          if (booking.user?.email) {
+            emailsToNotify.push({
+              email: booking.user.email,
+              name: booking.user.fullName,
+              time: startTime
             });
           }
-        });
-
-        // В. Email илгээх (Энэ нь Transaction-аас гадна байх нь зөв)
-        for (const booking of session.bookings) {
-          if (booking.user?.email) {
-            try {
-              // Цагийг Монгол формат руу хөрвүүлэх
-              const formattedTime = new Date(session.StartTime).toLocaleString('mn-MN', {
-                timeZone: 'Asia/Ulaanbaatar',
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-              });
-
-              await resend.emails.send({
-                from: 'Tokalot <onboarding@resend.dev>',
-                to: booking.user.email,
-                subject: 'Хичээл цуцлагдсан тухай мэдэгдэл',
-                html: `
-                  <div style="font-family: sans-serif; line-height: 1.5;">
-                    <h2>Сайн байна уу, ${booking.user.fullName}</h2>
-                    <p>Уучлаарай, таны <b>${formattedTime}</b>-т орох байсан хичээл хүн хүрээгүй тул цуцлагдлаа.</p>
-                    <p>Таны ашигласан сесс (эрх) автоматаар буцаж орсон тул та өөр цагт захиалга өгөх боломжтой.</p>
-                    <br/>
-                    <p>Танд амжилт хүсье, Tokalot баг.</p>
-                  </div>
-                `,
-              });
-            } catch (mailError) {
-              console.error(`Email Error (User: ${booking.user.email}):`, mailError);
-            }
-          }
         }
-        cancelledIds.push(session.id);
+      } 
+      
+      // --- ЛОГИК Б: ХУГАЦАА ӨНГӨРСӨН БОЛ ШУУД ХААХ ---
+      // Хэрэв хичээлийн цаг нь одооноос өмнө (StartTime <= now) бол 
+      // бааз дээр true/false байх нь хамаагүй, шууд status: false болгоно.
+      else if (startTime <= now) {
+        sessionUpdates.push(
+          prisma.section.update({
+            where: { id: session.id },
+            data: { status: false }
+          })
+        );
       }
     }
 
+    // 2. БААЗ РУУ TRANSACTION ИЛГЭЭХ
+    if (sessionUpdates.length > 0 || membershipUpdates.length > 0) {
+      await prisma.$transaction([...sessionUpdates, ...membershipUpdates]);
+    }
+
+    // 3. ИМЭЙЛ ИЛГЭЭХ (Зөвхөн цуцлагдсан хүмүүс рүү)
+    emailsToNotify.forEach(data => {
+      resend.emails.send({
+        from: 'Tokalot <onboarding@resend.dev>',
+        to: data.email,
+        subject: 'Хичээл цуцлагдсан мэдэгдэл',
+        html: `<p>Сайн байна уу, ${data.name}. Таны хичээл хүн хүрээгүй тул цуцлагдлаа.</p>`
+      }).catch(err => console.error(err));
+    });
+
     return NextResponse.json({
-      message: "Cron job finished",
-      checkedCount: sessionsToCheck.length,
-      cancelledCount: cancelledIds.length,
+      success: true,
+      processed: sessions.length, // Одоо энэ тоо 0-ээс их гарна
     });
 
   } catch (error: any) {
-    console.error("Cron Error Detail:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

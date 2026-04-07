@@ -14,14 +14,27 @@ export async function GET(req: NextRequest) {
   try {
     const now = new Date();
 
+    const where =
+      status === "completed"
+        ? {
+            clerkId,
+            OR: [
+              { status: true, section: { endTime: { lt: now } } },
+              { status: false },
+            ],
+          }
+        : {
+            clerkId,
+            status: true,
+            section: { endTime: { gt: now } },
+          };
+
     const myBookings = await prisma.booking.findMany({
-      where: {
-        clerkId: clerkId,
-        section: status === "completed" 
-          ? { endTime: { lt: now } } 
-          : { endTime: { gt: now } } 
-      },
-      include: {
+      where,
+      select: {
+        id: true,
+        status: true,
+        updatedAt: true,
         section: {
           select: {
             id: true,
@@ -29,14 +42,10 @@ export async function GET(req: NextRequest) {
             level: true,
             StartTime: true,
             endTime: true,
-          }
-        }
+          },
+        },
       },
-      orderBy: {
-        section: {
-          StartTime: "desc"
-        }
-      }
+      orderBy: { section: { StartTime: "desc" } },
     });
 
     return NextResponse.json(myBookings);

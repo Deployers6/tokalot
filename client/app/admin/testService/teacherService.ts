@@ -2,7 +2,7 @@ import {
   getTeachers,
   addTeacher,
   updateTeacher,
-} from "../testMock/mockTeachers";
+} from "../lib/mockTeachers";
 
 export const teacherService = {
   getTeachers: async () => {

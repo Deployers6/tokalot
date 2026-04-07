@@ -1,4 +1,5 @@
 "use client";
+
 import { motion } from "framer-motion";
 
 const teachers = ["1", "2", "3", "4", "5", "6", "7"];
@@ -10,6 +11,7 @@ export const MainThree = () => {
         <p className="text-[36px] max-md:text-[28px] text-[#CEE7F0]">
           Meet our Speakers
         </p>
+
         <p className="text-[16px] max-md:text-[14px] text-[#BCC8D1]">
           Native mentors with background in literature, journalism, and public
           speaking.
@@ -23,7 +25,9 @@ export const MainThree = () => {
             animate={{ x: ["0px", "-100%"] }}
             transition={{
               repeat: Infinity,
+
               ease: "linear",
+
               duration: 60,
             }}
           >
@@ -31,10 +35,14 @@ export const MainThree = () => {
               <div
                 key={i}
                 className="
-                  min-w-[286px] h-[381px]
-                  max-md:min-w-[220px] max-md:h-[300px]
-                  bg-white rounded-[12px] flex items-center justify-center
-                "
+
+min-w-[286px] h-[381px]
+
+max-md:min-w-[220px] max-md:h-[300px]
+
+bg-white rounded-[12px] flex items-center justify-center
+
+"
               >
                 Teacher {(i % teachers.length) + 1}
               </div>
