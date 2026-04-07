@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
     });
 
     const dbUserMap = new Map(
-      dbUsers.map((u) => [u.clerkId, u.membership?.status || "NO_MEMBERSHIP"]),
+      dbUsers.map((u: { clerkId: string; membership: { status: string } | null }) => [u.clerkId, u.membership?.status || "NO_MEMBERSHIP"]),
     );
 
     // 4. Жагсаалтыг шүүж нэгтгэх
