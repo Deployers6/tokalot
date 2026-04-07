@@ -36,12 +36,12 @@ const BACKEND_URL = "https://tokalot.vercel.app";
 
 function formatTime(iso: string) {
   try {
-    // UTC цагийг хэрэглэгчийн локал (Монгол) цаг руу хөрвүүлж харуулна
-    return new Date(iso).toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
+    const timePart = iso.includes("T") ? iso.split("T")[1] : iso;
+    const [hour, minute] = timePart.split(":");
+    const h = parseInt(hour, 10);
+    const period = h >= 12 ? "PM" : "AM";
+    const display = h % 12 || 12;
+    return `${String(display).padStart(2, "0")}:${minute} ${period}`;
   } catch {
     return iso;
   }
@@ -55,11 +55,12 @@ function isoToDateInput(iso: string) {
   }
 }
 
+// UTC цагийг ШУУД авна, ямар ч хөрвүүлэлтгүй
 function isoToTimeInput(iso: string) {
   try {
     const timePart = iso.includes("T") ? iso.split("T")[1] : iso;
     const [hour, minute] = timePart.split(":");
-    return `${hour}:${minute}`;
+    return `${hour.padStart(2, "0")}:${minute}`;
   } catch {
     return "";
   }
@@ -72,7 +73,7 @@ function CalendarPicker({
   onClose,
   activeDates,
 }: {
-  selectedDate: string; // "YYYY-MM-DD"
+  selectedDate: string;
   onSelect: (date: string) => void;
   onClose: () => void;
   activeDates: Set<string>;
@@ -131,7 +132,6 @@ function CalendarPicker({
         className="relative bg-white rounded-3xl shadow-2xl p-5 w-80"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <button
             onClick={prevMonth}
@@ -150,7 +150,6 @@ function CalendarPicker({
           </button>
         </div>
 
-        {/* Day labels */}
         <div className="grid grid-cols-7 mb-1">
           {DAYS.map((d) => (
             <div
@@ -162,7 +161,6 @@ function CalendarPicker({
           ))}
         </div>
 
-        {/* Date cells */}
         <div className="grid grid-cols-7 gap-y-1">
           {cells.map((day, i) => {
             if (!day) return <div key={i} />;
@@ -190,7 +188,6 @@ function CalendarPicker({
           })}
         </div>
 
-        {/* Today button */}
         <button
           onClick={() => {
             const t = new Date();
@@ -227,8 +224,8 @@ function EditForm({
   const [form, setForm] = useState({
     title: section.title,
     sessionDate: isoToDateInput(section.StartTime),
-    startTime: isoToTimeInput(section.StartTime),
-    endTime: isoToTimeInput(section.endTime),
+    startTime: isoToTimeInput(section.StartTime), // UTC шууд
+    endTime: isoToTimeInput(section.endTime), // UTC шууд
     capacity: String(section.capacity),
     teacherId: section.teacherId,
   });
@@ -236,45 +233,48 @@ function EditForm({
   const set = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
 
-  // EditForm доторх handleSave хэсэг
-  const handleSave = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setLoading(true);
-  setError("");
-
-  try {
-    const payload = {
-      title: form.title,
-      teacherId: form.teacherId, // Сонгосон багшийн ID-г заавал явуулна
-      startTime: `${form.sessionDate}T${form.startTime}:00`, // Backend 'startTime' гэж хүлээж авч байгаа
-      endTime: `${form.sessionDate}T${form.endTime}:00`,
-      capacity: String(form.capacity),
-    };
-
-    // 1. URL-аа файлтайгаа ижил болгох: /api/admin/sessions/
-    const res = await fetch(
-      `${BACKEND_URL}/api/admin/sessions/${section.id}`, 
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      }
-    );
-
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.error || "Update failed");
-    }
-
-    // 2. Амжилттай болсны дараа fetchSections() дуудагдаж багшийн нэр шинэчлэгдэнэ
-    onSuccess(); 
-  } catch (err: any) {
-    console.error("Update Error:", err);
-    setError(err.message || "Алдаа гарлаа");
-  } finally {
-    setLoading(false);
+  // Хөрвүүлэлтгүй, шууд ISO болгоно
+  function localToUTC(dateStr: string, timeStr: string): string {
+    return `${dateStr}T${timeStr}:00`;
   }
-};
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const payload = {
+        title: form.title,
+        teacherId: form.teacherId,
+        StartTime: localToUTC(form.sessionDate, form.startTime),
+        endTime: localToUTC(form.sessionDate, form.endTime),
+        capacity: form.capacity,
+      };
+
+      const res = await fetch(
+        `${BACKEND_URL}/api/admin/patch.session/${section.id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Update failed");
+      }
+
+      onSuccess();
+    } catch (err: any) {
+      console.error("Update Error:", err);
+      setError(err.message || "Алдаа гарлаа");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!confirm("Энэ session-г устгах уу?")) return;
     setDeleting(true);
@@ -573,18 +573,18 @@ export default function Session() {
 
   const handleSuccess = () => {
     closeSheet();
-    setTimeout(fetchSections, 400);
+    setTimeout(() => {
+      fetchSections();
+      fetchTeachers();
+    }, 400);
   };
 
-  // Сонгосон өдрөөр шүүнэ
   const filteredSections = sections.filter(
     (s) => isoToDateInput(s.StartTime) === selectedDate,
   );
 
-  // Calendar дээр цэг харуулах өдрүүд
   const activeDates = new Set(sections.map((s) => isoToDateInput(s.StartTime)));
 
-  // Header дээр харуулах label
   const MONTHS = [
     "January",
     "February",
@@ -602,7 +602,6 @@ export default function Session() {
   const [selYear, selMonth] = selectedDate.split("-").map(Number);
   const headerLabel = `${MONTHS[selMonth - 1]} ${selYear}`;
 
-  // Сонгосон өдрийн label
   const selDateObj = new Date(`${selectedDate}T00:00:00`);
   const dateLabel = selDateObj.toLocaleDateString("en-US", {
     weekday: "long",
@@ -612,7 +611,6 @@ export default function Session() {
 
   return (
     <div className="relative">
-      {/* Month picker button */}
       <div className="px-5 py-3">
         <button
           onClick={() => setShowCalendar(true)}
@@ -624,7 +622,6 @@ export default function Session() {
         </button>
       </div>
 
-      {/* Calendar modal */}
       {showCalendar && (
         <CalendarPicker
           selectedDate={selectedDate}
@@ -634,7 +631,6 @@ export default function Session() {
         />
       )}
 
-      {/* Auto-cancellation notice */}
       <div className="mx-5 mb-4 bg-[#E0F8FF] rounded-2xl px-4 py-3 flex items-start gap-2">
         <Info className="h-4 w-4 text-[#006688] flex-shrink-0 mt-0.5" />
         <p className="text-xs text-[#006688] leading-relaxed">
@@ -644,7 +640,6 @@ export default function Session() {
         </p>
       </div>
 
-      {/* Title */}
       <div className="px-5 flex items-center justify-between mb-4">
         <div>
           <h2 className="font-extrabold text-2xl text-gray-900">
@@ -660,7 +655,6 @@ export default function Session() {
         </button>
       </div>
 
-      {/* Session list */}
       <div className="px-5 flex flex-col gap-3 pb-6">
         {loadingSections ? (
           <div className="flex justify-center py-16">
@@ -680,7 +674,6 @@ export default function Session() {
         )}
       </div>
 
-      {/* Bottom sheet */}
       {sheet !== null && (
         <>
           <div
