@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { $Enums } from "@/app/generated/prisma/client";
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -49,16 +50,18 @@ export async function POST(req: NextRequest) {
     // 4. TRANSACTION: Membership болон History-г зэрэг үүсгэх
     const newMembership = await prisma.membership.create({
       data: {
-        clerkId: clerkId,
-        status: "PENDING",
+        user: { connect: { clerkId: clerkId } },
+        status: $Enums.MembershipStatus.PENDING,
         totalSessions: 0,
         usedSessions: 0,
-        history: {
-          create: {
-            action: "REQUESTED",
-            change: 0,
-          },
-        },
+      },
+    });
+
+    await prisma.membershipHistory.create({
+      data: {
+        clerkId: clerkId,
+        action: "REQUESTED",
+        change: 0,
       },
     });
 

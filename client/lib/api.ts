@@ -29,6 +29,15 @@ export async function fetchMyBookings(clerkId: string, status: "upcoming" | "com
   return res.json();
 }
 
+// Membership status авах
+export async function fetchMembershipStatus(clerkId: string) {
+  const res = await fetch(`${BACKEND_URL}/api/user/membership-status`, {
+    headers: { "x-user-id": clerkId },
+  });
+  if (!res.ok) throw new Error("Status авахад алдаа гарлаа");
+  return res.json() as Promise<{ status: string }>;
+}
+
 // Membership хүсэлт илгээх
 export async function sendMembershipRequest(clerkId: string, email: string, fullName: string) {
   const res = await fetch(`${BACKEND_URL}/api/admin/membership/request`, {
@@ -41,6 +50,6 @@ export async function sendMembershipRequest(clerkId: string, email: string, full
     },
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || data.error || "Хүсэлт илгээхэд алдаа гарлаа");
+  if (!res.ok) throw new Error((data.message || data.error || "Хүсэлт илгээхэд алдаа гарлаа") + (data.details ? `: ${data.details}` : ""));
   return data;
 }
