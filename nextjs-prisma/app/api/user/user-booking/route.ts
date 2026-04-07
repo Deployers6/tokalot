@@ -8,7 +8,10 @@ export async function POST(req: NextRequest) {
     const { sectionId, clerkId } = body;
 
     if (!clerkId || !sectionId) {
-      return NextResponse.json({ message: "Мэдээлэл дутуу байна" }, { status: 400 });
+      return NextResponse.json(
+        { message: "Мэдээлэл дутуу байна" },
+        { status: 400 },
+      );
     }
 
     // Transaction-ы гадна байгаа findFirst нь зөвхөн анхны шүүлтүүр болно
@@ -17,79 +20,83 @@ export async function POST(req: NextRequest) {
     });
 
     if (!member || member.status !== "ACTIVE") {
-      return NextResponse.json({ message: "Та идэвхтэй гишүүн биш байна" }, { status: 400 });
+      return NextResponse.json(
+        { message: "Та идэвхтэй гишүүн биш байна" },
+        { status: 400 },
+      );
     }
 
     // Зэрэг ирэх хүсэлтийг шийдвэрлэх Transaction
-    const result = await prisma.$transaction(async (tx) => {
-      
-      // 1. SECTION-ийг "Түгжиж" унших (Select for Update-тай ижил утгатай)
-      // Энд findUnique ашиглаж байгаа тул Prisma тухайн мөрийг түр хязгаарлана
-      const section = await tx.section.findUnique({
-        where: { id: sectionId },
-        include: { 
-          _count: { select: { bookings: true } } 
-        },
-      });
-
-      if (!section) throw new Error("SECTION_NOT_FOUND");
-
-      // 2. СУУДАЛ ШАЛГАХ (Хамгийн чухал хэсэг)
-      // Хэрэв хоёр хүсэлт зэрэг орж ирвэл, эхнийх нь амжиж bookings-ийг нэмэх хүртэл
-      // дараагийн хүсэлт энд байгаа section._count.bookings-ийн шинэчлэгдсэн утгыг хүлээнэ.
-      if (section._count.bookings >= section.capacity) {
-        throw new Error("SECTION_FULL");
-      }
-
-      // 3. ДАВХАР ЗАХИАЛГА ШАЛГАХ
-      const existingBooking = await tx.booking.findUnique({
-        where: {
-          clerkId_sectionId: { clerkId, sectionId },
-        },
-      });
-      if (existingBooking) throw new Error("ALREADY_BOOKED");
-
-      // 4. СЕСС ҮЛДЭГДЭЛ ШАЛГАХ (Дотор нь дахин шалгах нь аюулгүй)
-      const currentMember = await tx.membership.findUnique({
-        where: { clerkId },
-      });
-      if (!currentMember || currentMember.usedSessions >= currentMember.totalSessions) {
-        throw new Error("INSUFFICIENT_SESSIONS");
-      }
-
-      // 5. ҮЙЛДЛҮҮДИЙГ ГҮЙЦЭТГЭХ
-      const newBooking = await tx.booking.create({
-        data: {
-          clerkId,
-          sectionId,
-          status: true,
-          isTrial: false,
-        },
-      });
-
-      await tx.membership.update({
-        where: { clerkId },
-        data: {
-          usedSessions: { increment: 1 },
-          history: {
-            create: {
-              action: "CLASS_BOOKING",
-              change: -1,
-            },
+    const result = await prisma.$transaction(
+      async (tx) => {
+        // 1. SECTION-ийг "Түгжиж" унших (Select for Update-тай ижил утгатай)
+        // Энд findUnique ашиглаж байгаа тул Prisma тухайн мөрийг түр хязгаарлана
+        const section = await tx.section.findUnique({
+          where: { id: sectionId },
+          include: {
+            _count: { select: { bookings: true } },
           },
-        },
-      });
+        });
 
-      return newBooking;
-    }, {
-      // Тусгаарлах түвшинг дээшлүүлснээр зэрэг хүсэлтийг дараалалд оруулна
-      isolationLevel: "Serializable", 
-      maxWait: 5000,
-      timeout: 10000,
-    });
+        if (!section) throw new Error("SECTION_NOT_FOUND");
 
-    return NextResponse.json({ message: "Амжилттай бүртгүүллээ" }, { status: 201 });
+        // 2. СУУДАЛ ШАЛГАХ (Хамгийн чухал хэсэг)
+        // Хэрэв хоёр хүсэлт зэрэг орж ирвэл, эхнийх нь амжиж bookings-ийг нэмэх хүртэл
+        // дараагийн хүсэлт энд байгаа section._count.bookings-ийн шинэчлэгдсэн утгыг хүлээнэ.
+        if (section._count.bookings >= section.capacity) {
+          throw new Error("SECTION_FULL");
+        }
 
+        // 3. ДАВХАР ЗАХИАЛГА ШАЛГАХ
+        const existingBooking = await tx.booking.findUnique({
+          where: {
+            clerkId_sectionId: { clerkId, sectionId },
+          },
+        });
+        if (existingBooking) throw new Error("ALREADY_BOOKED");
+
+        // 4. СЕСС ҮЛДЭГДЭЛ ШАЛГАХ (Дотор нь дахин шалгах нь аюулгүй)
+        const currentMember = await tx.membership.findUnique({
+          where: { clerkId },
+        });
+        if (
+          !currentMember ||
+          currentMember.usedSessions >= currentMember.totalSessions
+        ) {
+          throw new Error("INSUFFICIENT_SESSIONS");
+        }
+
+        // 5. ҮЙЛДЛҮҮДИЙГ ГҮЙЦЭТГЭХ
+        const newBooking = await tx.booking.create({
+          data: {
+            clerkId,
+            sectionId,
+            status: true,
+            isTrial: false,
+          },
+        });
+
+        await tx.membership.update({
+          where: { clerkId },
+          data: {
+            usedSessions: { increment: 1 },
+          },
+        });
+
+        return newBooking;
+      },
+      {
+        // Тусгаарлах түвшинг дээшлүүлснээр зэрэг хүсэлтийг дараалалд оруулна
+        isolationLevel: "Serializable",
+        maxWait: 5000,
+        timeout: 10000,
+      },
+    );
+
+    return NextResponse.json(
+      { message: "Амжилттай бүртгүүллээ" },
+      { status: 201 },
+    );
   } catch (error: any) {
     console.error("BOOKING_ERROR:", error);
 
@@ -101,8 +108,10 @@ export async function POST(req: NextRequest) {
     };
 
     return NextResponse.json(
-      { message: errorMessages[error.message] || "Захиалга хийхэд алдаа гарлаа" },
-      { status: errorMessages[error.message] ? 400 : 500 }
+      {
+        message: errorMessages[error.message] || "Захиалга хийхэд алдаа гарлаа",
+      },
+      { status: errorMessages[error.message] ? 400 : 500 },
     );
   }
 }
