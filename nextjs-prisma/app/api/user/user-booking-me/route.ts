@@ -14,9 +14,7 @@ export async function GET(req: Request) {
     // 2. Тухайн Clerk ID-тай холбоотой БҮХ захиалгыг баазаас татах
     const userBookings = await prisma.booking.findMany({
       where: {
-        user: {
-          clerkId: userId, // Хэрэглэгчийн Clerk ID-аар шүүнэ
-        },
+        clerkId: userId, // Хэрэглэгчийн Clerk ID-аар шүүнэ
       },
       include: {
         section: true, // Захиалсан хэсгийн мэдээллийг хамт авна

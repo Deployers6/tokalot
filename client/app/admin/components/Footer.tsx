@@ -15,7 +15,7 @@ export const Footer = () => {
 
   return (
     <div className="fixed bottom-0 left-0 right-0">
-      <div className="bg-black w-full h-[75px] rounded-tr-2xl rounded-tl-2xl flex justify-between items-center px-10">
+      <div className="bg-black w-full h-[75px] rounded-tr-2xl rounded-tl-2xl flex justify-between items-center px-10 flex-row-reverse ">
         {tabs.map(({ label, icon: Icon, href }) => {
           const isActive = pathname === href;
 

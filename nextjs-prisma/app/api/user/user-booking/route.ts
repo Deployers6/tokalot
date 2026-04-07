@@ -5,11 +5,6 @@ import { createClerkClient } from "@clerk/backend";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-
-    const clerkClient = createClerkClient({
-      secretKey: process.env.CLERK_SECRET_KEY,
-    });
-
     const { sectionId, clerkId } = body;
 
     if (!clerkId || !sectionId) {
@@ -19,95 +14,98 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const user = await clerkClient.users.getUser(clerkId);
-
-    const member = await prisma.membership.findFirst({
-      where: {
-        clerkId,
-      },
+    // Transaction-ы гадна байгаа findFirst нь зөвхөн анхны шүүлтүүр болно
+    const member = await prisma.membership.findUnique({
+      where: { clerkId },
     });
 
-    if (member?.status === "ACTIVE") {
-      const result = await prisma.$transaction(
-        async (tx) => {
-          const section = await tx.section.findUnique({
-            where: { id: sectionId },
-            include: { _count: { select: { bookings: true } } },
-          });
-
-          if (!section) throw new Error("SECTION_NOT_FOUND");
-          if (section._count.bookings >= section.capacity)
-            throw new Error("SECTION_FULL");
-
-          const existingBooking = await tx.booking.findUnique({
-            where: {
-              clerkId_sectionId: { clerkId, sectionId },
-            },
-          });
-          if (existingBooking) throw new Error("ALREADY_BOOKED");
-
-          const newBooking = await tx.booking.create({
-            data: {
-              clerkId: clerkId,
-              sectionId: sectionId,
-              status: true,
-              isTrial: false,
-            },
-          });
-
-          await tx.membership.update({
-            where: { clerkId: clerkId },
-            data: {
-              usedSessions: { increment: 1 },
-              history: {
-                create: {
-                  action: "CLASS_BOOKING",
-                  change: -1,
-                },
-              },
-            },
-          });
-
-          return newBooking;
-        },
-        {
-          maxWait: 5000,
-          timeout: 10000,
-        },
-      );
-    } else {
+    if (!member || member.status !== "ACTIVE") {
       return NextResponse.json(
-        {
-          message: "Ta gishuun bish baina",
-        },
+        { message: "Та идэвхтэй гишүүн биш байна" },
         { status: 400 },
       );
     }
 
-    return NextResponse.json(
-      {
-        message: "Амжилттай бүртгүүллээ",
+    // Зэрэг ирэх хүсэлтийг шийдвэрлэх Transaction
+    const result = await prisma.$transaction(
+      async (tx) => {
+        // 1. SECTION-ийг "Түгжиж" унших (Select for Update-тай ижил утгатай)
+        // Энд findUnique ашиглаж байгаа тул Prisma тухайн мөрийг түр хязгаарлана
+        const section = await tx.section.findUnique({
+          where: { id: sectionId },
+          include: {
+            _count: { select: { bookings: true } },
+          },
+        });
+
+        if (!section) throw new Error("SECTION_NOT_FOUND");
+
+        // 2. СУУДАЛ ШАЛГАХ (Хамгийн чухал хэсэг)
+        // Хэрэв хоёр хүсэлт зэрэг орж ирвэл, эхнийх нь амжиж bookings-ийг нэмэх хүртэл
+        // дараагийн хүсэлт энд байгаа section._count.bookings-ийн шинэчлэгдсэн утгыг хүлээнэ.
+        if (section._count.bookings >= section.capacity) {
+          throw new Error("SECTION_FULL");
+        }
+
+        // 3. ДАВХАР ЗАХИАЛГА ШАЛГАХ
+        const existingBooking = await tx.booking.findUnique({
+          where: {
+            clerkId_sectionId: { clerkId, sectionId },
+          },
+        });
+        if (existingBooking) throw new Error("ALREADY_BOOKED");
+
+        // 4. СЕСС ҮЛДЭГДЭЛ ШАЛГАХ (Дотор нь дахин шалгах нь аюулгүй)
+        const currentMember = await tx.membership.findUnique({
+          where: { clerkId },
+        });
+        if (
+          !currentMember ||
+          currentMember.usedSessions >= currentMember.totalSessions
+        ) {
+          throw new Error("INSUFFICIENT_SESSIONS");
+        }
+
+        // 5. ҮЙЛДЛҮҮДИЙГ ГҮЙЦЭТГЭХ
+        const newBooking = await tx.booking.create({
+          data: {
+            clerkId,
+            sectionId,
+            status: true,
+            isTrial: false,
+          },
+        });
+
+        await tx.membership.update({
+          where: { clerkId },
+          data: {
+            usedSessions: { increment: 1 },
+          },
+        });
+
+        return newBooking;
       },
+      {
+        // Тусгаарлах түвшинг дээшлүүлснээр зэрэг хүсэлтийг дараалалд оруулна
+        isolationLevel: "Serializable",
+        maxWait: 5000,
+        timeout: 10000,
+      },
+    );
+
+    return NextResponse.json(
+      { message: "Амжилттай бүртгүүллээ" },
       { status: 201 },
     );
   } catch (error: any) {
     console.error("BOOKING_ERROR:", error);
 
     const errorMessages: Record<string, string> = {
-      USER_NOT_FOUND: "Хэрэглэгч олдсонгүй",
-      NO_MEMBERSHIP: "Танд идэвхтэй гишүүнчлэл алга",
-      INSUFFICIENT_SESSIONS: "Таны хичээлийн эрх (сесс) дууссан байна",
       SECTION_NOT_FOUND: "Хичээл олдсонгүй",
       SECTION_FULL: "Уучлаарай, энэ хичээлийн суудал дүүрсэн байна",
       ALREADY_BOOKED: "Та энэ хичээлд бүртгүүлсэн байна",
+      INSUFFICIENT_SESSIONS: "Таны хичээлийн эрх дууссан байна",
     };
-
-    if (error.code === "P2028") {
-      return NextResponse.json(
-        { message: "Бааз ачаалалтай байна, түр хүлээгээд дахин оролдоно уу" },
-        { status: 503 },
-      );
-    }
 
     return NextResponse.json(
       {

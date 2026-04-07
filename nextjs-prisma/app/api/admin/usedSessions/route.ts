@@ -72,19 +72,11 @@ export async function POST(req: NextRequest) {
         }
       });
 
-      // Д. Membership-ийн usedSessions-ийг 1-ээр нэмж, History бичих
+      // Д. Membership-ийн usedSessions-ийг 1-ээр нэмэх
       await tx.membership.update({
         where: { clerkId: clerkId },
         data: {
           usedSessions: { increment: 1 },
-          history: {
-            create: {
-              action: "CLASS_BOOKING",
-              change: -1,
-              // Хэрэв schema дээр чинь clerkId шаардлагатай бол энд нэмж өгнө:
-              // clerkId: clerkId 
-            }
-          }
         }
       });
 

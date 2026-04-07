@@ -46,70 +46,106 @@ export async function GET() {
   }
 }
 
-export async function PUT(req: Request) {
+export async function PATCH(req: Request) {
   try {
+    // 1. Эрх шалгах (Clerk session + Postman Header-ийг хоёуланг нь зөвшөөрнө)
     const { sessionClaims } = await auth();
     const role = sessionClaims?.metadata?.role || req.headers.get("x-role");
 
     if (role !== "ADMIN") {
       return NextResponse.json(
-        { error: "Зөвшөөрөлгүй хандалт" },
-        { status: 403 },
+        { error: "Зөвшөөрөлгүй хандалт. Админ эрх шаардлагатай." },
+        { status: 403 }
       );
     }
 
+    // 2. ID-г URL-аас авах
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 
     if (!id) {
-      return NextResponse.json({ error: "ID олдсонгүй" }, { status: 400 });
+      return NextResponse.json({ error: "Багшийн ID олдсонгүй" }, { status: 400 });
     }
 
+    // 3. Body-оос мэдээллийг авах
     const body = await req.json();
 
     const { fullName, bio, experience, imageUrl } = body;
 
-    const updated = await prisma.teacher.update({
+    // 4. Өгөгдлийг шинэчлэх
+    const updatedTeacher = await prisma.teacher.update({
       where: { id },
-      data: { fullName, bio, experience, imageUrl },
+      data: {
+        // Зөвхөн ирсэн утгуудыг шинэчилнэ (undefined бол хуучин утгаараа үлдэнэ)
+        fullName: fullName ?? undefined,
+        bio: bio ?? undefined,
+        experience: experience ?? undefined,
+        imageUrl: imageUrl ?? undefined,
+      },
     });
 
-    return NextResponse.json(updated);
-  } catch (error) {
-    console.error("PUT_ERROR:", error);
-    return NextResponse.json({ error: "Серверийн алдаа" }, { status: 500 });
+    return NextResponse.json({
+      message: "Багшийн мэдээлэл амжилттай шинэчлэгдлээ",
+      updatedTeacher,
+    });
+
+  } catch (error: any) {
+    console.error("PATCH_TEACHER_ERROR:", error);
+
+    // Хэрэв ийм ID-тай багш байхгүй бол
+    if (error.code === 'P2025') {
+      return NextResponse.json(
+        { error: "Ийм ID-тай багш олдсонгүй." },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: "Серверийн алдаа", details: error.message },
+      { status: 500 }
+    );
   }
 }
 
 export async function DELETE(req: Request) {
   try {
     const { sessionClaims } = await auth();
-    const role = sessionClaims?.metadata?.role || req.headers.get("x-role");
+    const clerkRole = sessionClaims?.metadata?.role;
+    const headerRole = req.headers.get("x-role");
 
-    if (role !== "ADMIN") {
-      return NextResponse.json(
-        { error: "Зөвшөөрөлгүй хандалт" },
-        { status: 403 },
-      );
+    if (clerkRole !== "ADMIN" && headerRole !== "ADMIN") {
+      return NextResponse.json({ error: "Зөвшөөрөлгүй хандалт" }, { status: 403 });
     }
 
     const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id");
+    const teacherId = searchParams.get("id");
 
-    if (!id) {
+    if (!teacherId) {
       return NextResponse.json({ error: "ID олдсонгүй" }, { status: 400 });
     }
 
+    // --- TRANSACTION-ИЙГ САЛГАЖ ХИЙХ (Илүү найдвартай) ---
+    
+    // 1. Эхлээд холбоотой хичээлүүдийг устгах
+    await prisma.section.deleteMany({
+      where: { teacherId: teacherId },
+    });
+
+    // 2. Дараа нь багшийг устгах
     const deletedTeacher = await prisma.teacher.delete({
-      where: { id },
+      where: { id: teacherId },
     });
 
     return NextResponse.json({
       message: "Амжилттай устгагдлаа",
       deletedTeacher,
     });
-  } catch (error) {
+
+  } catch (error: any) {
     console.error("DELETE_ERROR:", error);
-    return NextResponse.json({ error: "Серверийн алдаа" }, { status: 500 });
+    return NextResponse.json({ 
+      error: "Устгахад алдаа гарлаа", 
+      details: error.message 
+    }, { status: 500 });
   }
 }
