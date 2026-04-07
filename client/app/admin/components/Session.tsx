@@ -37,13 +37,12 @@ const BACKEND_URL = "https://tokalot.vercel.app";
 
 function formatTime(iso: string) {
   try {
-    const timePart = iso.includes("T") ? iso.split("T")[1] : iso;
-    const [hourStr, minuteStr] = timePart.split(":");
-    const hour = parseInt(hourStr, 10);
-    const minute = minuteStr;
-    const ampm = hour >= 12 ? "PM" : "AM";
-    const h12 = hour % 12 === 0 ? 12 : hour % 12;
-    return `${String(h12).padStart(2, "0")}:${minute} ${ampm}`;
+    // UTC цагийг хэрэглэгчийн локал (Монгол) цаг руу хөрвүүлж харуулна
+    return new Date(iso).toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
   } catch {
     return iso;
   }
@@ -239,43 +238,46 @@ function EditForm({
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
 
   const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (form.endTime <= form.startTime) {
-      setError("End time нь start time-аас хожуу байх ёстой.");
-      return;
-    }
-    setLoading(true);
-    setError("");
-    try {
-      const payload = {
-        title: form.title,
-        level: section.level || "Beginner",
-        teacherId: form.teacherId,
-        startTime: `${form.sessionDate}T${form.startTime}:00`,
-        endTime: `${form.sessionDate}T${form.endTime}:00`,
-        capacity: Number(form.capacity),
-      };
-      const res = await fetch(
-        `${BACKEND_URL}/api/admin/patch.session/${section.id}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        },
-      );
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(
-          err.message || err.error || `Server error: ${res.status}`,
-        );
-      }
-      onSuccess();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Алдаа гарлаа");
-    } finally {
-      setLoading(false);
-    }
-  };
+  e.preventDefault();
+  if (form.endTime <= form.startTime) {
+    setError("End time нь start time-аас хожуу байх ёстой.");
+    return;
+  }
+  setLoading(true);
+  setError("");
+  
+  try {
+    // Цагийг яг байгаагаар нь Date объект болгож хадгалах
+    // Ингэснээр Browser-ийн цагийн бүс зөв ажиллана
+    const startIso = new Date(`${form.sessionDate}T${form.startTime}:00`).toISOString();
+    const endIso = new Date(`${form.sessionDate}T${form.endTime}:00`).toISOString();
+
+    const payload = {
+      title: form.title,
+      teacherId: form.teacherId, // Энэ ID-г дамжуулснаар багш солигдоно
+      StartTime: startIso,
+      endTime: endIso,
+      capacity: Number(form.capacity),
+    };
+
+    const res = await fetch(
+      `${BACKEND_URL}/api/admin/patch.session/${section.id}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      },
+    );
+
+    if (!res.ok) throw new Error("Шинэчилж чадсангүй");
+    
+    onSuccess(); // Энэ нь fetchSections()-ийг дуудаж багшийн нэрийг шинээр авна
+  } catch (err) {
+    setError(err instanceof Error ? err.message : "Алдаа гарлаа");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleDelete = async () => {
     if (!confirm("Энэ session-г устгах уу?")) return;
