@@ -1,34 +1,27 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 //admin session update
-export async function PATCH(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   try {
-    const { id } = await params;
     const body = await req.json();
+    const { title, teacherId, StartTime, endTime, capacity } = body;
 
-    const { title, startTime, level, endTime, capacity, status } = body;
-
-    const updatedSection = await prisma.section.update({
-      where: { id: id },
+    const updated = await prisma.section.update({
+      where: { id: params.id },
       data: {
-        ...(title && { title }),
-        ...(level && { level }),
-        ...(startTime && { StartTime: new Date(startTime) }),
-        ...(endTime && { endTime: new Date(endTime) }),
-        ...(capacity && { capacity: parseInt(capacity) }),
-        ...(status !== undefined && { status }),
+        title,
+        teacherId, // Багшийн ID-г энд шинэчилнэ
+        StartTime: new Date(StartTime),
+        endTime: new Date(endTime),
+        capacity: Number(capacity),
       },
+      include: {
+        teacher: true, // Шинэ багшийн нэрийг цуг буцаах нь чухал!
+      }
     });
 
-    return NextResponse.json(updatedSection, { status: 200 });
+    return NextResponse.json(updated);
   } catch (error) {
-    console.error("Unsuccessful to create session:", error);
-    return NextResponse.json(
-      { error: "Unsuccessful to create session" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Алдаа" }, { status: 500 });
   }
 }
