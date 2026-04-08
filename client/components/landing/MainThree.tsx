@@ -37,12 +37,12 @@ export const MainThree = () => {
             {[...teachers, ...teachers].map((teacher, i) => (
               <div
                 key={i}
-                className="min-w-[280px] h-[381px] max-md:min-w-[220px] max-md:h-[300px] rounded-[12px] overflow-hidden"
+                className="min-w-[280px] h-[380px] max-md:min-w-[200px] max-md:h-[300px] rounded-[12px] overflow-hidden"
               >
                 <img
                   src={teacher.image}
                   alt={teacher.name}
-                  className="w-[280px] h-full object-cover"
+                  className="w-[280px] h-full object-cover max-md:w-[200px]"
                 />
               </div>
             ))}
