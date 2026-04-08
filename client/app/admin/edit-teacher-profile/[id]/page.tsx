@@ -96,7 +96,7 @@ export default function EditTeacherProfilePage() {
       const url = `${BACKEND_URL}/api/admin/teachers?id=${form.id}`;
 
       const res = await fetch(url, {
-        method: "PUT",
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
