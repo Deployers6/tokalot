@@ -17,13 +17,18 @@ const nextConfig: NextConfig = {
     ],
   },
   async headers() {
+    const allowedOrigin =
+      process.env.NODE_ENV === "production"
+        ? "https://tokalot-1d4s.vercel.app"
+        : "http://localhost:3000";
+
     return [
       {
         source: "/api/:path*",
         headers: [
           {
             key: "Access-Control-Allow-Origin",
-            value: "http://localhost:3000",
+            value: allowedOrigin,
           },
           {
             key: "Access-Control-Allow-Methods",
@@ -31,7 +36,8 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Access-Control-Allow-Headers",
-            value: "Content-Type, Authorization, x-admin-id, x-user-id, x-user-email, x-user-name",
+            value:
+              "Content-Type, Authorization, x-admin-id, x-user-id, x-user-email, x-user-name",
           },
           {
             key: "Access-Control-Allow-Credentials",
@@ -41,7 +47,6 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  crossOrigin: "anonymous",
 };
 
 export default nextConfig;
