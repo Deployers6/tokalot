@@ -11,24 +11,8 @@ export const Header = () => {
   const { isSignedIn, isLoaded, user } = useUser();
   const role = user?.publicMetadata?.role as string | undefined;
 
-  const handleMyPage = async () => {
-    if (role === "ADMIN") {
-      router.push("/admin");
-      return;
-    }
-    try {
-      const res = await fetch("/api/membership/status", {
-        headers: { "x-user-id": user?.id ?? "" },
-      });
-      const data = await res.json();
-      if (data?.status === "ACTIVE") {
-        router.push("/user/dashboard");
-      } else {
-        router.push("/user");
-      }
-    } catch {
-      router.push("/user");
-    }
+  const handleMyPage = () => {
+    router.push("/api/auth/redirect");
   };
 
   const scrollToSection = (id: string) => {
