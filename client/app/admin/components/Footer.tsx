@@ -1,4 +1,3 @@
-
 // export default Footer;
 
 // "use client";
@@ -73,7 +72,7 @@ export const Footer = () => {
               <span className="flex flex-col items-center justify-center">
                 <Icon
                   className={`h-[28px] w-[28px] transition-colors ${
-                    isActive ? "text-[#20BEF9]" : "text-[#64748B]"
+                    isActive ? "text-[#FFFFFF]" : "text-[#64748B]"
                   }`}
                 />
                 <span

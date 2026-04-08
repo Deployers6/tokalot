@@ -1063,7 +1063,7 @@ export default function Session() {
         <Info className="h-4 w-4 text-[#006688] shrink-0 mt-0.5" />
         <p className="text-[10px] text-[#006688] font-medium leading-relaxed">
           <span className="font-extrabold uppercase">Auto-Cancel:</span>{" "}
-          Sessions with &lt;3 participants 48h before start will be closed.
+          Sessions with under 3 participants 48h before start will be closed.
         </p>
       </div>
 
