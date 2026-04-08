@@ -111,7 +111,7 @@ export default function ProfilePage() {
       <div className="relative flex w-full flex-col bg-white min-h-screen md:min-h-0 md:w-[390px] md:h-[860px] md:rounded-[2rem] md:shadow-2xl md:overflow-hidden">
         {/* Header */}
         <div className="bg-black px-6 py-5">
-          <h1 className="text-2xl font-extrabold text-white">Tokalot</h1>
+          <h1 onClick={() => router.push("/")} className="text-2xl font-extrabold text-white cursor-pointer">Tokalot</h1>
         </div>
 
         {/* Scrollable content */}

@@ -106,7 +106,7 @@ export default function DashboardPage() {
 
         {/* Header */}
         <div className="bg-black px-6 py-5">
-          <h1 className="text-2xl font-extrabold tracking-normal text-white">Tokalot</h1>
+          <h1 onClick={() => router.push("/")} className="text-2xl font-extrabold tracking-normal text-white cursor-pointer">Tokalot</h1>
         </div>
 
         {/* Scrollable content */}
