@@ -2,7 +2,13 @@
 
 import { motion } from "framer-motion";
 
-const teachers = ["1", "2", "3", "4", "5", "6", "7"];
+const teachers = [
+  { id: 1, image: "/Teacher1.jpeg", name: "Teacher 1" },
+  { id: 2, image: "/Teacher2.jpeg", name: "Teacher 2" },
+  { id: 3, image: "/Teacher3.jpeg", name: "Teacher 3" },
+  { id: 4, image: "/Teacher4.jpeg", name: "Teacher 4" },
+  { id: 5, image: "/Teacher5.jpeg", name: "Teacher 5" },
+];
 
 export const MainThree = () => {
   return (
@@ -11,7 +17,6 @@ export const MainThree = () => {
         <p className="text-[36px] max-md:text-[28px] text-[#CEE7F0]">
           Meet our Speakers
         </p>
-
         <p className="text-[16px] max-md:text-[14px] text-[#BCC8D1]">
           Native mentors with background in literature, journalism, and public
           speaking.
@@ -22,29 +27,23 @@ export const MainThree = () => {
         <div className="relative mt-[72px] max-md:mt-[48px] overflow-hidden w-full max-w-[1298px]">
           <motion.div
             className="flex gap-[24px] max-md:gap-[16px] w-max"
-            animate={{ x: ["0px", "-100%"] }}
+            animate={{ x: ["0%", "-50%"] }}
             transition={{
               repeat: Infinity,
-
               ease: "linear",
-
-              duration: 60,
+              duration: 30,
             }}
           >
-            {[...teachers, ...teachers, ...teachers].map((_, i) => (
+            {[...teachers, ...teachers].map((teacher, i) => (
               <div
                 key={i}
-                className="
-
-min-w-[286px] h-[381px]
-
-max-md:min-w-[220px] max-md:h-[300px]
-
-bg-white rounded-[12px] flex items-center justify-center
-
-"
+                className="min-w-[280px] h-[381px] max-md:min-w-[220px] max-md:h-[300px] rounded-[12px] overflow-hidden"
               >
-                Teacher {(i % teachers.length) + 1}
+                <img
+                  src={teacher.image}
+                  alt={teacher.name}
+                  className="w-[280px] h-full object-cover"
+                />
               </div>
             ))}
           </motion.div>
