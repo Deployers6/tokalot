@@ -10,7 +10,26 @@ export const Header = () => {
   const [open, setOpen] = useState(false);
   const { isSignedIn, isLoaded, user } = useUser();
   const role = user?.publicMetadata?.role as string | undefined;
-  const dashboardPath = role === "ADMIN" ? "/admin" : "/user";
+
+  const handleMyPage = async () => {
+    if (role === "ADMIN") {
+      router.push("/admin");
+      return;
+    }
+    try {
+      const res = await fetch("/api/membership/status", {
+        headers: { "x-user-id": user?.id ?? "" },
+      });
+      const data = await res.json();
+      if (data?.status === "ACTIVE") {
+        router.push("/user/dashboard");
+      } else {
+        router.push("/user");
+      }
+    } catch {
+      router.push("/user");
+    }
+  };
 
   const scrollToSection = (id: string) => {
     if (pathname !== "/") {
@@ -67,10 +86,10 @@ export const Header = () => {
             (isSignedIn ? (
               <>
                 <button
-                  onClick={() => router.push(dashboardPath)}
+                  onClick={() => handleMyPage()}
                   className="text-slate-400 hover:text-sky-400 transition"
                 >
-                  Dashboard
+                  My Page
                 </button>
                 <UserButton />
               </>
@@ -134,10 +153,10 @@ export const Header = () => {
               (isSignedIn ? (
                 <>
                   <button
-                    onClick={() => router.push(dashboardPath)}
+                    onClick={() => handleMyPage()}
                     className="text-left py-2"
                   >
-                    Dashboard
+                    My Page
                   </button>
                   <UserButton />
                 </>
