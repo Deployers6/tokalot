@@ -79,12 +79,12 @@ export const Header = () => {
               </>
             ) : (
               <>
-                <SignInButton mode="modal" forceRedirectUrl="/api/auth/redirect">
+                <SignInButton mode="modal" forceRedirectUrl="/">
                   <button className="text-slate-400 hover:text-sky-400 transition">
                     Sign In
                   </button>
                 </SignInButton>
-                <SignUpButton mode="modal" forceRedirectUrl="/api/auth/redirect">
+                <SignUpButton mode="modal" forceRedirectUrl="/">
                   <button className="px-5 py-2 rounded-xl bg-linear-to-r from-[#0088AA] to-[#00B4D8] text-white shadow-md hover:opacity-90 transition">
                     Sign Up
                   </button>
@@ -146,12 +146,12 @@ export const Header = () => {
                 </>
               ) : (
                 <>
-                  <SignInButton mode="modal" forceRedirectUrl="/api/auth/redirect">
+                  <SignInButton mode="modal" forceRedirectUrl="/">
                     <button className="bg-sky-400 text-[#004963] px-4 py-2 rounded-xl text-center font-bold">
                       Sign In
                     </button>
                   </SignInButton>
-                  <SignUpButton mode="modal" forceRedirectUrl="/api/auth/redirect">
+                  <SignUpButton mode="modal" forceRedirectUrl="/">
                     <button className="bg-sky-400 text-[#004963] px-4 py-2 rounded-xl text-center font-bold">
                       Sign Up
                     </button>
