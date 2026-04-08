@@ -255,51 +255,18 @@ export default function EditTeacherProfilePage() {
           </div>
         </div>  */}
 
-        {/* Experience Level Dropdown */}
         <div>
           <label className="block mb-2 text-sm font-medium">
             Experience Level
           </label>
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setOpen((prev) => !prev)}
-              className={`w-full h-[56px] px-4 bg-[#EFEFEF] border-none flex items-center justify-between cursor-pointer text-sm transition-all ${
-                open ? "rounded-t-xl" : "rounded-xl"
-              }`}
-            >
-              <span
-                className={form.experience ? "text-gray-800" : "text-gray-400"}
-              >
-                {form.experience || "Select level"}
-              </span>
-              <ChevronDown
-                className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
-                  open ? "rotate-180" : ""
-                }`}
-              />
-            </button>
-            {open && (
-              <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 border-t-0 rounded-b-xl overflow-hidden z-10">
-                {levels.map((l, i) => (
-                  <div
-                    key={l}
-                    onClick={() => {
-                      setForm((prev) => prev && { ...prev, experience: l });
-                      setOpen(false);
-                    }}
-                    className={`px-4 py-3.5 text-sm cursor-pointer hover:bg-gray-50 ${
-                      form.experience === l
-                        ? "bg-[#EFEFEF] font-medium"
-                        : "text-gray-700"
-                    } ${i !== levels.length - 1 ? "border-b border-gray-100" : ""}`}
-                  >
-                    {l}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <input
+            type="text"
+            name="experience"
+            value={form.experience}
+            onChange={handleChange}
+            placeholder="Enter your experience level"
+            className="w-full h-[55px] p-3 rounded-xl bg-[#EFEFEF] outline-none"
+          />
         </div>
 
         {/* Bio */}
