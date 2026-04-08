@@ -417,7 +417,7 @@ export default function EditTeacherProfilePage() {
       {/* Phone Frame Container */}
       <div
         className="relative w-full h-screen bg-white shadow-2xl overflow-hidden flex flex-col
-                      md:max-w-[430px] md:h-[90vh] md:rounded-[45px] md:border-[10px] md:border-white"
+                      md:max-w-[430px] md:h-[90vh] md:rounded-[45px]  md:border-white"
       >
         {/* Custom Header - Хар өнгөтэй, ирмэгтээ тулсан */}
         <div className="w-full h-[60px] bg-black text-white flex items-center px-5 shrink-0 z-30">
