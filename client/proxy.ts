@@ -1,5 +1,4 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
 
 const isPublicRoute = createRouteMatcher([
   "/",
@@ -8,29 +7,8 @@ const isPublicRoute = createRouteMatcher([
   "/api/auth/redirect",
 ]);
 
-const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
-const isUserRoute = createRouteMatcher(["/user(.*)"]);
-
 export default clerkMiddleware(async (auth, req) => {
-  if (isPublicRoute(req)) return NextResponse.next();
-
-  const { userId, sessionClaims } = await auth();
-
-  if (!userId) {
-    return NextResponse.redirect(new URL("/sign-in", req.url));
-  }
-
-  const role = (sessionClaims?.metadata as { role?: string })?.role;
-
-  if (isAdminRoute(req) && role !== "ADMIN") {
-    return NextResponse.redirect(new URL("/user", req.url));
-  }
-
-  if (isUserRoute(req) && role === "ADMIN") {
-    return NextResponse.redirect(new URL("/admin", req.url));
-  }
-
-  return NextResponse.next();
+  if (!isPublicRoute(req)) await auth.protect();
 });
 
 export const config = {

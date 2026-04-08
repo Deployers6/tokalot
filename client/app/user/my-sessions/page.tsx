@@ -17,8 +17,8 @@ function formatDate(isoStr: string) {
 
 function formatTime(isoStr: string) {
   const d = new Date(isoStr);
-  const h = d.getHours();
-  const m = d.getMinutes();
+  const h = d.getUTCHours();
+  const m = d.getUTCMinutes();
   const period = h < 12 ? "AM" : "PM";
   const displayH = h > 12 ? h - 12 : h === 0 ? 12 : h;
   return `${String(displayH).padStart(2, "0")}:${String(m).padStart(2, "0")} ${period}`;
