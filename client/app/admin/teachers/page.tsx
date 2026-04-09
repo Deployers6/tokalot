@@ -336,7 +336,7 @@ export default function TeachersPage() {
                         />
                       </div>
                       <div className="overflow-hidden">
-                        <h3 className="font-black text-gray-800 text-lg leading-tight truncate">
+                        <h3 className="font-black text-gray-800 text-lg leading-tight">
                           {teacher.fullName}
                         </h3>
                         <p className="text-[#20BEF9] text-xs font-black uppercase tracking-wider mt-1">
