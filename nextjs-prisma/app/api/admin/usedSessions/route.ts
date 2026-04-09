@@ -42,18 +42,29 @@ export async function POST(req: NextRequest) {
     }
 
     // 4. Transaction ашиглан Booking үүсгэж, сессийг нь хасах
-    const result = await prisma.$transaction(async (tx) => {
-      
-      // А. Хичээл байгаа эсэхийг шалгах
+    const result = await prisma.$transaction(async (tx: any) => {
       const section = await tx.section.findUnique({
         where: { id: sectionId },
-        include: { _count: { select: { bookings: true } } }
       });
 
       if (!section) throw new Error("SECTION_NOT_FOUND");
+
+      if (!section.status) {
+        throw new Error("SECTION_CLOSED");
+      }
+
+      if (new Date(section.StartTime) <= new Date()) {
+        throw new Error("SECTION_STARTED");
+      }
+
+      const activeBookingCount = await tx.booking.count({
+        where: {
+          sectionId,
+          status: true,
+        },
+      });
       
-      // Б. Анги дүүрсэн эсэхийг шалгах
-      if (section._count.bookings >= section.capacity) {
+      if (activeBookingCount >= section.capacity) {
         throw new Error("SECTION_FULL");
       }
 
@@ -94,6 +105,8 @@ export async function POST(req: NextRequest) {
     // Тодорхой алдаануудыг хэрэглэгчид ойлгомжтой буцаах
     const errorMap: Record<string, string> = {
       SECTION_NOT_FOUND: "Уучлаарай, хичээл олдсонгүй.",
+      SECTION_CLOSED: "Энэ хичээл хаагдсан байна.",
+      SECTION_STARTED: "Энэ хичээл аль хэдийн эхэлсэн байна.",
       SECTION_FULL: "Уучлаарай, энэ хичээлийн суудал дүүрсэн байна.",
       ALREADY_BOOKED: "Та энэ хичээлд бүртгүүлсэн байна.",
     };

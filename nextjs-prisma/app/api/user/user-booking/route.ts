@@ -28,22 +28,29 @@ export async function POST(req: NextRequest) {
 
     // Зэрэг ирэх хүсэлтийг шийдвэрлэх Transaction
     const result = await prisma.$transaction(
-      async (tx) => {
-        // 1. SECTION-ийг "Түгжиж" унших (Select for Update-тай ижил утгатай)
-        // Энд findUnique ашиглаж байгаа тул Prisma тухайн мөрийг түр хязгаарлана
+      async (tx: any) => {
         const section = await tx.section.findUnique({
           where: { id: sectionId },
-          include: {
-            _count: { select: { bookings: true } },
-          },
         });
 
         if (!section) throw new Error("SECTION_NOT_FOUND");
 
-        // 2. СУУДАЛ ШАЛГАХ (Хамгийн чухал хэсэг)
-        // Хэрэв хоёр хүсэлт зэрэг орж ирвэл, эхнийх нь амжиж bookings-ийг нэмэх хүртэл
-        // дараагийн хүсэлт энд байгаа section._count.bookings-ийн шинэчлэгдсэн утгыг хүлээнэ.
-        if (section._count.bookings >= section.capacity) {
+        if (!section.status) {
+          throw new Error("SECTION_CLOSED");
+        }
+
+        if (new Date(section.StartTime) <= new Date()) {
+          throw new Error("SECTION_STARTED");
+        }
+
+        const activeBookingCount = await tx.booking.count({
+          where: {
+            sectionId,
+            status: true,
+          },
+        });
+
+        if (activeBookingCount >= section.capacity) {
           throw new Error("SECTION_FULL");
         }
 
@@ -102,6 +109,8 @@ export async function POST(req: NextRequest) {
 
     const errorMessages: Record<string, string> = {
       SECTION_NOT_FOUND: "Хичээл олдсонгүй",
+      SECTION_CLOSED: "Энэ хичээл хаагдсан тул бүртгүүлэх боломжгүй",
+      SECTION_STARTED: "Энэ хичээл аль хэдийн эхэлсэн байна",
       SECTION_FULL: "Уучлаарай, энэ хичээлийн суудал дүүрсэн байна",
       ALREADY_BOOKED: "Та энэ хичээлд бүртгүүлсэн байна",
       INSUFFICIENT_SESSIONS: "Таны хичээлийн эрх дууссан байна",

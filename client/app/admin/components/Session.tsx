@@ -528,7 +528,7 @@
 
 
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   CalendarIcon,
   Loader2,
@@ -536,13 +536,19 @@ import {
   Plus,
   Users,
   User,
-  Lock,
   PencilIcon,
   Info,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
 import CreateSession from "./CreateSession";
+import {
+  formatSessionTime,
+  getSessionDateInputValue,
+  getSessionTimeInputValue,
+  getSessionToday,
+  toSessionISOString,
+} from "@/lib/session-time";
 
 interface Teacher {
   id: string;
@@ -565,34 +571,15 @@ interface Section {
 const BACKEND_URL = "https://tokalot.vercel.app";
 
 function formatTime(iso: string) {
-  try {
-    const timePart = iso.includes("T") ? iso.split("T")[1] : iso;
-    const [hour, minute] = timePart.split(":");
-    const h = parseInt(hour, 10);
-    const period = h >= 12 ? "PM" : "AM";
-    const display = h % 12 || 12;
-    return `${String(display).padStart(2, "0")}:${minute} ${period}`;
-  } catch {
-    return iso;
-  }
+  return formatSessionTime(iso);
 }
 
 function isoToDateInput(iso: string) {
-  try {
-    return iso.split("T")[0];
-  } catch {
-    return "";
-  }
+  return getSessionDateInputValue(iso);
 }
 
 function isoToTimeInput(iso: string) {
-  try {
-    const timePart = iso.includes("T") ? iso.split("T")[1] : iso;
-    const [hour, minute] = timePart.split(":");
-    return `${hour.padStart(2, "0")}:${minute}`;
-  } catch {
-    return "";
-  }
+  return getSessionTimeInputValue(iso);
 }
 
 // ── CalendarPicker ──────────────────────────────────────────────
@@ -719,8 +706,8 @@ function EditForm({
       const payload = {
         title: form.title,
         teacherId: form.teacherId,
-        StartTime: `${form.sessionDate}T${form.startTime}:00`,
-        endTime: `${form.sessionDate}T${form.endTime}:00`,
+        StartTime: toSessionISOString(form.sessionDate, form.startTime),
+        endTime: toSessionISOString(form.sessionDate, form.endTime),
         capacity: form.capacity,
       };
       const res = await fetch(
@@ -884,7 +871,7 @@ export default function Session() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(
-    () => new Date().toISOString().split("T")[0],
+    () => getSessionToday(),
   );
   const [showCalendar, setShowCalendar] = useState(false);
   const [sheet, setSheet] = useState<null | "create" | Section>(null);

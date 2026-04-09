@@ -37,6 +37,13 @@ export async function DELETE(
       );
     }
 
+    if (!booking.status) {
+      return NextResponse.json(
+        { error: "Энэ захиалга аль хэдийн цуцлагдсан байна." },
+        { status: 409 },
+      );
+    }
+
     const now = new Date();
     const startTime = new Date(booking.section.StartTime);
 
@@ -56,16 +63,33 @@ export async function DELETE(
       );
     }
 
-    await prisma.$transaction(async (tx) => {
-      await tx.booking.update({
-        where: { id: bookingId },
+    const cancelResult = await prisma.$transaction(async (tx: any) => {
+      const updatedBooking = await tx.booking.updateMany({
+        where: {
+          id: bookingId,
+          status: true,
+        },
         data: { status: false },
       });
+
+      if (updatedBooking.count === 0) {
+        return false;
+      }
+
       await tx.membership.update({
         where: { clerkId: clerkId },
         data: { usedSessions: { decrement: 1 } },
       });
+
+      return true;
     });
+
+    if (!cancelResult) {
+      return NextResponse.json(
+        { error: "Энэ захиалга аль хэдийн цуцлагдсан байна." },
+        { status: 409 },
+      );
+    }
 
     return NextResponse.json({
       message: "Захиалга цуцлагдлаа. 1 credit буцаан нэмэгдлээ.",

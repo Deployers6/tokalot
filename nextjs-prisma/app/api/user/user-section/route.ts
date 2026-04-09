@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { getSessionDayRange } from "@/lib/session-time";
 
 export async function GET(req: NextRequest) {
   try {
@@ -11,12 +12,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Огноо сонгоно уу" }, { status: 400 });
     }
 
-
-    const startOfDay = new Date(dateParam);
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date(dateParam);
-    endOfDay.setHours(23, 59, 59, 999);
+    const { start: startOfDay, end: endOfDay } = getSessionDayRange(dateParam);
 
    
     const sessions = await prisma.section.findMany({

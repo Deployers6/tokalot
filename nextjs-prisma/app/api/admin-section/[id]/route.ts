@@ -12,7 +12,11 @@ export async function GET(
       where: { id: id },
       include: {
         teacher: true,
-        bookings: true,
+        bookings: {
+          where: {
+            status: true,
+          },
+        },
       },
       
     });
@@ -21,7 +25,7 @@ export async function GET(
     if (!section) {
       return NextResponse.json({ error: "Not found session" }, { status: 404 });
     }
-return NextResponse.json({section, message: "Successful"}, {status: 201});
+return NextResponse.json({section, message: "Successful"}, {status: 200});
     
   } catch (error) {
     console.error(error); 

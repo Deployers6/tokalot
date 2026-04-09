@@ -1,6 +1,7 @@
 "use client";
 import { CalendarIcon, Loader2, X } from "lucide-react";
 import React, { useState, useEffect } from "react";
+import { getSessionToday, toSessionISOString } from "@/lib/session-time";
 
 interface Teacher {
   id: string;
@@ -23,7 +24,7 @@ export default function CreateSession({
   const [error, setError] = useState("");
   const [loadingTeachers, setLoadingTeachers] = useState(true);
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = getSessionToday();
 
   const [form, setForm] = useState({
     title: "",
@@ -81,8 +82,8 @@ export default function CreateSession({
         title: form.title,
         level: "Beginner",
         teacherId: form.teacherId,
-        StartTime: `${form.sessionDate}T${form.startTime}:00`,
-        endTime: `${form.sessionDate}T${form.endTime}:00`,
+        StartTime: toSessionISOString(form.sessionDate, form.startTime),
+        endTime: toSessionISOString(form.sessionDate, form.endTime),
         capacity: form.capacity,
       };
       console.log("Sending payload:", payload);

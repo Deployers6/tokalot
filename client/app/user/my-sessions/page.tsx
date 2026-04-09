@@ -5,25 +5,11 @@ import { useRouter } from "next/navigation";
 import { CalendarDays, BookMarked, Info, Clock, CheckCircle2, UserCircle, Lock } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { fetchMyBookings, cancelBooking } from "@/lib/api";
+import { formatSessionDate, formatSessionTime } from "@/lib/session-time";
 
 function cn(...classes: (string | undefined | false)[]) {
   return classes.filter(Boolean).join(" ");
 }
-
-function formatDate(isoStr: string) {
-  const d = new Date(isoStr);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-}
-
-function formatTime(isoStr: string) {
-  const d = new Date(isoStr);
-  const h = d.getUTCHours();
-  const m = d.getUTCMinutes();
-  const period = h < 12 ? "AM" : "PM";
-  const displayH = h > 12 ? h - 12 : h === 0 ? 12 : h;
-  return `${String(displayH).padStart(2, "0")}:${String(m).padStart(2, "0")} ${period}`;
-}
-
 
 export default function MySessionsPage() {
   const router = useRouter();
@@ -194,11 +180,11 @@ export default function MySessionsPage() {
                           <div className="flex items-center gap-4">
                             <div className="flex items-center gap-1.5">
                               <CalendarDays size={13} />
-                              <span>{formatDate(section.StartTime)}</span>
+                              <span>{formatSessionDate(section.StartTime)}</span>
                             </div>
                             <div className="flex items-center gap-1.5">
                               <Clock size={13} />
-                              <span>{formatTime(section.StartTime)} - {formatTime(section.endTime)}</span>
+                              <span>{formatSessionTime(section.StartTime)} - {formatSessionTime(section.endTime)}</span>
                             </div>
                           </div>
                           {isCancelled && (booking.cancelledAt || booking.updatedAt) && (

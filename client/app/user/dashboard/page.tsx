@@ -5,53 +5,41 @@ import { useRouter } from "next/navigation";
 import { CalendarDays, BookMarked, CheckCircle2, Clock, UserCircle } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { fetchSessions, bookSession, fetchMyBookings } from "@/lib/api";
+import {
+  addDaysToSessionDate,
+  formatSessionTime,
+  getSessionCalendarMeta,
+  getSessionToday,
+} from "@/lib/session-time";
 
 function cn(...classes: (string | undefined | false)[]) {
   return classes.filter(Boolean).join(" ");
 }
 
-const DAY_LABELS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
 ];
 
-function toFullDate(d: Date) {
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
-}
-
-function getDays(baseDate: Date, total = 30) {
+function getDays(baseDate: string, total = 30) {
   return Array.from({ length: total }, (_, i) => {
-    const d = new Date(baseDate);
-    d.setDate(baseDate.getDate() + i);
+    const fullDate = addDaysToSessionDate(baseDate, i);
+    const meta = getSessionCalendarMeta(fullDate);
     return {
-      label: DAY_LABELS[d.getDay()],
-      date: d.getDate(),
-      fullDate: toFullDate(d),
-      month: d.getMonth(),
-      year: d.getFullYear(),
+      label: meta.label,
+      date: meta.date,
+      fullDate,
+      month: meta.month,
+      year: meta.year,
     };
   });
-}
-
-function formatTime(isoStr: string) {
-  const d = new Date(isoStr);
-  const h = d.getUTCHours();
-  const m = d.getUTCMinutes();
-  const period = h < 12 ? "AM" : "PM";
-  const displayH = h > 12 ? h - 12 : h === 0 ? 12 : h;
-  return `${String(displayH).padStart(2, "0")}:${String(m).padStart(2, "0")} ${period}`;
 }
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user } = useUser();
-  const today = new Date();
-  const todayFull = toFullDate(today);
-  const days = getDays(today, 30);
+  const todayFull = getSessionToday();
+  const days = getDays(todayFull, 30);
 
   const [activeDay, setActiveDay] = useState(todayFull);
   const [sessions, setSessions] = useState<any[]>([]);
@@ -181,7 +169,7 @@ export default function DashboardPage() {
                           </div>
                           <div className="flex items-center gap-1.5 text-xs text-slate-500">
                             <Clock size={13} />
-                            <span>{formatTime(session.StartTime)} - {formatTime(session.endTime)}</span>
+                            <span>{formatSessionTime(session.StartTime)} - {formatSessionTime(session.endTime)}</span>
                           </div>
                         </div>
                       </div>
@@ -196,7 +184,7 @@ export default function DashboardPage() {
                     >
                       <div className="flex flex-col gap-1">
                         <p className="text-xs font-bold text-sky-500">
-                          {formatTime(session.StartTime)} - {formatTime(session.endTime)}
+                          {formatSessionTime(session.StartTime)} - {formatSessionTime(session.endTime)}
                         </p>
                         <p className="text-sm font-bold text-black">{session.title}</p>
                         <p className="text-xs text-slate-400">{session.level}</p>
