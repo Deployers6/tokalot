@@ -146,7 +146,7 @@ export default function DatePicker({ selected, setSelected }: Props) {
                 onClick={() => setSelected(null)}
                 className="text-xs text-gray-400 hover:text-red-400"
               >
-                Арилгах
+                Clear
               </button>
             </div>
           )}

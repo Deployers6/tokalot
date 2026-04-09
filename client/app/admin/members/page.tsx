@@ -62,7 +62,7 @@
 //   }, [userId]);
 
 //   const handleDelete = async (clerkId: string) => {
-//     if (!confirm("Are you sure?")) return;
+//     if (!confirm("Are you sure you want to delete this user?")) return;
 //     try {
 //       await fetch(`${BACKEND_URL}/api/admin/delete-user`, {
 //         method: "DELETE",
@@ -201,7 +201,7 @@ const User = () => {
   }, [userId]);
 
   const handleDelete = async (clerkId: string) => {
-    if (!confirm("Are you sure?")) return;
+    if (!confirm("Are you sure you want to delete this user?")) return;
     try {
       await fetch(`${BACKEND_URL}/api/admin/delete-user`, {
         method: "DELETE",

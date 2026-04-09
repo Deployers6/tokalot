@@ -53,7 +53,7 @@ export default function TeachersPage() {
   }, [getToken]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Энэ багшийг устгах уу?")) return;
+    if (!confirm("Are you sure you want to delete this teacher?")) return;
     try {
       const token = await getToken();
       const res = await fetch(`${BACKEND_URL}/api/admin/teachers?id=${id}`, {
@@ -63,13 +63,13 @@ export default function TeachersPage() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        alert(data?.error || "Зөвхөн өөрийн нэмсэн багшийг устгах боломжтой");
+        alert(data?.error || "You can only delete teachers you have added");
         return;
       }
       await fetchData();
     } catch (err) {
       console.error("Failed to delete teacher:", err);
-      alert("Устгахад алдаа гарлаа");
+      alert("Failed to delete teacher");
     }
   };
 

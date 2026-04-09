@@ -151,12 +151,12 @@ export default function DashboardPage() {
               {loading ? (
                 <div className="mt-10 flex flex-col items-center gap-2">
                   <div className="w-6 h-6 rounded-full border-2 border-sky-400 border-t-transparent animate-spin" />
-                  <p className="text-sm text-slate-400">Ачаалж байна...</p>
+                  <p className="text-sm text-slate-400">Loading...</p>
                 </div>
               ) : sessions.length === 0 ? (
                 <div className="mt-10 flex flex-col items-center gap-2">
                   <CalendarDays size={36} className="text-slate-200" />
-                  <p className="text-sm font-semibold text-slate-400">Энэ өдөр session байхгүй</p>
+                  <p className="text-sm font-semibold text-slate-400">No sessions available today</p>
                 </div>
               ) : (
                 sessions.map((session) => {
