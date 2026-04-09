@@ -277,7 +277,7 @@
 
 //   const handleSubmit = async () => {
 //     if (!form.name || !form.level) {
-//       alert("Name болон Experience Level шаардлагатай!");
+//       alert("Name and Experience Level are required!");
 //       return;
 //     }
 
@@ -469,7 +469,7 @@ export default function AddNewTeacher() {
 
   const handleSubmit = async () => {
     if (!form.name || !form.level) {
-      alert("Name болон Experience Level шаардлагатай!");
+      alert("Name and Experience Level are required!");
       return;
     }
 
@@ -499,11 +499,11 @@ export default function AddNewTeacher() {
         router.push("/admin/teachers");
       } else {
         const data = await res.json().catch(() => ({}));
-        alert(data?.error || "Хадгалахад алдаа гарлаа");
+        alert(data?.error || "Failed to save");
       }
     } catch (err) {
       console.error(err);
-      alert("Хадгалахад алдаа гарлаа");
+      alert("Failed to save");
     } finally {
       setLoading(false);
     }

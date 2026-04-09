@@ -1231,7 +1231,7 @@ export default function EditUserPage() {
 
   const handleDeleteMembership = async () => {
     setShowStatusDropdown(false);
-    if (!confirm("Устгах уу?")) return;
+    if (!confirm("Are you sure you want to delete this membership?")) return;
     try {
       const res = await fetch(`${BACKEND_URL}/api/admin/membership`, {
         method: "DELETE",
@@ -1247,7 +1247,7 @@ export default function EditUserPage() {
       setMembershipEnd(null);
       setMembershipDeleted(true);
     } catch (err) {
-      alert("Алдаа гарлаа");
+      alert("An error occurred");
     }
   };
 

@@ -118,14 +118,14 @@
 //       router.push("/admin/teachers");
 //     } catch (err) {
 //       console.error(err);
-//       alert("Хадгалахад алдаа гарлаа");
+//       alert("Failed to save");
 //     } finally {
 //       setSaving(false);
 //     }
 //   };
 
 //   const handleDelete = async () => {
-//     if (!form || !confirm("Энэ профайлыг устгах уу?")) return;
+//     if (!form || !confirm("Are you sure you want to delete this profile?")) return;
 //     try {
 //       const token = await getToken();
 //       const res = await fetch(
@@ -138,14 +138,14 @@
 
 //       if (!res.ok) {
 //         const data = await res.json().catch(() => ({}));
-//         alert(data?.error || "Зөвхөн өөрийн нэмсэн багшийг устгах боломжтой");
+//         alert(data?.error || "You can only delete teachers you have added");
 //         return;
 //       }
 
 //       router.push("/admin/teachers");
 //     } catch (err) {
 //       console.error(err);
-//       alert("Устгахад алдаа гарлаа");
+//       alert("Failed to delete");
 //     }
 //   };
 
@@ -365,21 +365,21 @@ export default function EditTeacherProfilePage() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        alert(data?.error || "Хадгалахад алдаа гарлаа");
+        alert(data?.error || "Failed to save");
         return;
       }
 
       router.push("/admin/teachers");
     } catch (err) {
       console.error(err);
-      alert("Хадгалахад алдаа гарлаа");
+      alert("Failed to save");
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!form || !confirm("Энэ профайлыг устгах уу?")) return;
+    if (!form || !confirm("Are you sure you want to delete this profile?")) return;
     try {
       const token = await getToken();
       const res = await fetch(
@@ -392,14 +392,14 @@ export default function EditTeacherProfilePage() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        alert(data?.error || "Зөвхөн өөрийн нэмсэн багшийг устгах боломжтой");
+        alert(data?.error || "You can only delete teachers you have added");
         return;
       }
 
       router.push("/admin/teachers");
     } catch (err) {
       console.error(err);
-      alert("Устгахад алдаа гарлаа");
+      alert("Failed to delete");
     }
   };
 

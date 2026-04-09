@@ -3,7 +3,7 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "https://tokalot.verc
 // Sessions авах (огноогоор)
 export async function fetchSessions(date: string) {
   const res = await fetch(`/api/sessions?date=${date}`);
-  if (!res.ok) throw new Error("Sessions авахад алдаа гарлаа");
+  if (!res.ok) throw new Error("Failed to fetch sessions");
   return res.json();
 }
 
@@ -15,7 +15,7 @@ export async function bookSession(sectionId: string, _clerkId?: string) {
     body: JSON.stringify({ sectionId }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Захиалга хийхэд алдаа гарлаа");
+  if (!res.ok) throw new Error(data.message || "Failed to book session");
   return data;
 }
 
@@ -27,14 +27,14 @@ export async function cancelBooking(bookingId: string, _clerkId?: string) {
     body: JSON.stringify({ bookingId }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Цуцлахад алдаа гарлаа");
+  if (!res.ok) throw new Error(data.error || "Failed to cancel booking");
   return data;
 }
 
 // Миний захиалгууд
 export async function fetchMyBookings(clerkId: string, status: "upcoming" | "completed") {
   const res = await fetch(`/api/user/my-bookings?status=${status}`);
-  if (!res.ok) throw new Error("Захиалгууд авахад алдаа гарлаа");
+  if (!res.ok) throw new Error("Failed to fetch bookings");
   return res.json();
 }
 
@@ -46,14 +46,14 @@ export async function updateUserProfile(firstName: string, lastName: string) {
     body: JSON.stringify({ firstName, lastName }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Хадгалахад алдаа гарлаа");
+  if (!res.ok) throw new Error(data.error || "Failed to save");
   return data;
 }
 
 // Membership мэдээлэл авах
 export async function fetchMembership(_clerkId?: string) {
   const res = await fetch(`/api/membership/status`);
-  if (!res.ok) throw new Error("Membership авахад алдаа гарлаа");
+  if (!res.ok) throw new Error("Failed to fetch membership");
   return res.json();
 }
 
@@ -69,6 +69,6 @@ export async function sendMembershipRequest(clerkId: string, email: string, full
     },
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || data.error || "Хүсэлт илгээхэд алдаа гарлаа");
+  if (!res.ok) throw new Error(data.message || data.error || "Failed to send request");
   return data;
 }

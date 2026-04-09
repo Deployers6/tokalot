@@ -75,9 +75,9 @@ export default function ProfilePage() {
     setPhotoUploading(true);
     try {
       await user.setProfileImage({ file });
-      showSuccess("Зураг амжилттай хадгалагдлаа");
+      showSuccess("Photo saved successfully");
     } catch {
-      alert("Зураг хадгалахад алдаа гарлаа");
+      alert("Failed to save photo");
     } finally {
       setPhotoUploading(false);
     }
@@ -93,9 +93,9 @@ export default function ProfilePage() {
       await updateUserProfile(firstName, lastName);
       await user.reload();
       setFullName(`${firstName} ${lastName}`.trim());
-      showSuccess("Мэдээлэл амжилттай хадгалагдлаа");
+      showSuccess("Profile saved successfully");
     } catch (err: any) {
-      alert("Алдаа: " + err.message);
+      alert("Error: " + err.message);
     } finally {
       setSaving(false);
     }
@@ -151,7 +151,7 @@ export default function ProfilePage() {
               disabled={photoUploading}
               className="mt-2 text-sm font-semibold text-black disabled:opacity-50"
             >
-              {photoUploading ? "Хадгалж байна..." : "Change Photo"}
+              {photoUploading ? "Saving..." : "Change Photo"}
             </button>
 
             {/* Form */}
@@ -205,11 +205,11 @@ export default function ProfilePage() {
                 {membership === undefined ? (
                   <div className="rounded-[12px] border border-slate-200 bg-white px-4 py-4 flex items-center justify-center gap-2">
                     <div className="w-4 h-4 rounded-full border-2 border-sky-400 border-t-transparent animate-spin" />
-                    <span className="text-sm text-slate-400">Ачаалж байна...</span>
+                    <span className="text-sm text-slate-400">Loading...</span>
                   </div>
                 ) : membership === null ? (
                   <div className="rounded-[12px] border border-slate-200 bg-white px-4 py-4 text-sm text-slate-400 text-center">
-                    Membership байхгүй байна
+                    No membership found
                   </div>
                 ) : (
                   <>
@@ -284,7 +284,7 @@ export default function ProfilePage() {
                 disabled={saving}
                 className="mt-2 w-full rounded-[12px] bg-black py-4 text-sm font-bold text-white hover:bg-neutral-800 transition-colors disabled:opacity-60"
               >
-                {saving ? "Хадгалж байна..." : "Save Changes"}
+                {saving ? "Saving..." : "Save Changes"}
               </button>
             </div>
           </div>

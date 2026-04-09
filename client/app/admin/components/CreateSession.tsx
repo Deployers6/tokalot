@@ -67,11 +67,11 @@ export default function CreateSession({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title || !form.teacherId || !form.startTime || !form.endTime) {
-      setError("Бүх талбарыг бөглөнө үү.");
+      setError("Please fill in all fields.");
       return;
     }
     if (form.endTime <= form.startTime) {
-      setError("End time нь start time-аас хожуу байх ёстой.");
+      setError("End time must be after start time.");
       return;
     }
     setLoading(true);
@@ -101,7 +101,7 @@ export default function CreateSession({
       onSuccess?.();
       onClose?.();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Алдаа гарлаа";
+      const msg = err instanceof Error ? err.message : "An error occurred";
       setError(msg);
       console.error("Submit error:", msg);
     } finally {
@@ -222,9 +222,9 @@ export default function CreateSession({
         >
           <option value="">
             {loadingTeachers
-              ? "Багш ачаалж байна..."
+              ? "Loading teachers..."
               : teachers.length === 0
-                ? "Багш олдоогүй"
+                ? "No teachers found"
                 : "Select a Teacher"}
           </option>
           {teachers.map((t) => (
@@ -241,7 +241,7 @@ export default function CreateSession({
         className="bg-[#20BEF9] text-white font-extrabold tracking-widest py-4 rounded-xl mt-1 disabled:opacity-50 flex items-center justify-center gap-2"
       >
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-        {loading ? "ҮҮСГЭЖ БУЙ..." : "PUBLISH SESSION"}
+        {loading ? "CREATING..." : "PUBLISH SESSION"}
       </button>
     </form>
   );

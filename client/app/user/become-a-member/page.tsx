@@ -13,8 +13,18 @@ const plans = [
     badge: "Popular",
     badgeColor: "bg-sky-100 text-sky-600",
     options: [
-      { months: "1mo", subtitle: "Valid for 30 days", price: "259,000 MNT", note: "STANDARD RATE" },
-      { months: "2mo", subtitle: "Save 5% total", price: "492,100 MNT", note: "" },
+      {
+        months: "1mo",
+        subtitle: "Valid for 30 days",
+        price: "259,000 MNT",
+        note: "STANDARD RATE",
+      },
+      {
+        months: "2mo",
+        subtitle: "Save 5% total",
+        price: "492,100 MNT",
+        note: "",
+      },
       { months: "3mo", subtitle: "Best Value", price: "699,300 MNT", note: "" },
     ],
   },
@@ -26,7 +36,12 @@ const plans = [
     options: [
       { months: "1mo", subtitle: "Intensive", price: "319,000 MNT", note: "" },
       { months: "2mo", subtitle: "Save 5%", price: "606,100 MNT", note: "" },
-      { months: "3mo", subtitle: "Maximum Focus", price: "861,300 MNT", note: "" },
+      {
+        months: "3mo",
+        subtitle: "Maximum Focus",
+        price: "861,300 MNT",
+        note: "",
+      },
     ],
   },
 ];
@@ -43,7 +58,7 @@ export default function BecomeAMemberPage() {
       await sendMembershipRequest(
         user.id,
         user.primaryEmailAddress?.emailAddress ?? "",
-        user.fullName ?? user.firstName ?? ""
+        user.fullName ?? user.firstName ?? "",
       );
       router.push("/user/become-a-member/pending");
     } catch (err: any) {
@@ -60,7 +75,6 @@ export default function BecomeAMemberPage() {
   return (
     <div className="flex min-h-screen items-center justify-center md:bg-neutral-200 md:py-10">
       <div className="relative flex w-full flex-col bg-white min-h-screen md:min-h-0 md:w-[390px] md:h-[860px] md:rounded-[2rem] md:shadow-2xl md:overflow-hidden">
-
         {/* Header */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
           <button
@@ -75,29 +89,46 @@ export default function BecomeAMemberPage() {
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto pb-28">
           <div className="px-5 pt-5 flex flex-col gap-5">
-
             {plans.map((plan) => (
-              <div key={plan.id} className="rounded-2xl border border-slate-100 overflow-hidden">
+              <div
+                key={plan.id}
+                className="rounded-2xl border border-slate-100 overflow-hidden"
+              >
                 <div className="flex items-center justify-between px-4 pt-4 pb-3">
-                  <h2 className="text-lg font-black text-black">{plan.label}</h2>
-                  <span className={`text-xs font-bold px-3 py-1 rounded-full ${plan.badgeColor}`}>
+                  <h2 className="text-lg font-black text-black">
+                    {plan.label}
+                  </h2>
+                  <span
+                    className={`text-xs font-bold px-3 py-1 rounded-full ${plan.badgeColor}`}
+                  >
                     {plan.badge}
                   </span>
                 </div>
                 <div className="flex flex-col divide-y divide-slate-100">
                   {plan.options.map((opt, idx) => (
-                    <div key={idx} className="flex items-center justify-between px-4 py-3">
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between px-4 py-3"
+                    >
                       <div className="flex items-center gap-3">
                         <div className="w-1 h-8 rounded-full bg-slate-200" />
                         <div>
-                          <p className="text-sm font-bold text-black">{opt.months}</p>
-                          <p className="text-xs text-slate-400">{opt.subtitle}</p>
+                          <p className="text-sm font-bold text-black">
+                            {opt.months}
+                          </p>
+                          <p className="text-xs text-slate-400">
+                            {opt.subtitle}
+                          </p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-base font-black text-black">{opt.price}</p>
+                        <p className="text-base font-black text-black">
+                          {opt.price}
+                        </p>
                         {opt.note && (
-                          <p className="text-[10px] font-bold uppercase text-slate-400">{opt.note}</p>
+                          <p className="text-[10px] font-bold uppercase text-slate-400">
+                            {opt.note}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -110,27 +141,35 @@ export default function BecomeAMemberPage() {
             <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-4">
               <div className="flex items-center gap-2 mb-2">
                 <Info size={16} className="text-sky-500 shrink-0" />
-                <p className="text-sm font-bold text-sky-700">Payment Instructions</p>
+                <p className="text-sm font-bold text-sky-700">
+                  Payment Instructions
+                </p>
               </div>
               <p className="text-xs text-slate-600 leading-relaxed mb-3">
-                To finalize your membership activation, please complete the payment via bank transfer.
+                To finalize your membership activation, please complete the
+                payment via bank transfer.
               </p>
               <div className="flex flex-col gap-2">
                 <p className="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
                   <Phone size={12} className="text-slate-400" />
                   Contact admin for bank details:
                 </p>
-                <a href="https://instagram.com/academy_admin" className="flex items-center gap-2 text-xs font-semibold text-sky-500">
+                <a
+                  href="https://www.instagram.com/tokalotcafe"
+                  className="flex items-center gap-2 text-xs font-semibold text-sky-500"
+                >
                   <AtSign size={13} />
-                  Instagram @academy_admin
+                  tokalotcafe
                 </a>
-                <a href="tel:+97600000000" className="flex items-center gap-2 text-xs font-semibold text-sky-500">
+                <a
+                  href="tel:+97600000000"
+                  className="flex items-center gap-2 text-xs font-semibold text-sky-500"
+                >
                   <Phone size={13} />
-                  +976 0000 0000
+                  +976 91930011
                 </a>
               </div>
             </div>
-
           </div>
         </div>
 
@@ -141,13 +180,12 @@ export default function BecomeAMemberPage() {
             disabled={loading}
             className="w-full rounded-2xl bg-black py-4 text-sm font-bold text-white hover:bg-neutral-800 transition-colors disabled:opacity-60"
           >
-            {loading ? "Илгээж байна..." : "Send Membership Request"}
+            {loading ? "Sending..." : "Send Membership Request"}
           </button>
           <p className="text-center text-[10px] text-slate-400 leading-relaxed">
-            Хүсэлт илгээснээр манай баг 24 цагийн дотор хянах болно.
+            After sending your request, our team will review it within 24 hours.
           </p>
         </div>
-
       </div>
     </div>
   );

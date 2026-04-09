@@ -7,7 +7,7 @@ export async function PATCH(req: NextRequest) {
   try {
     const { userId } = await auth();
     if (!userId) {
-      return NextResponse.json({ error: "Нэвтрээгүй байна" }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { firstName, lastName } = await req.json();

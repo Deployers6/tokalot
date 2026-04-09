@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   const status = searchParams.get("status");
 
   const res = await fetch(`${BACKEND_URL}/api/user/user-booking-me?userId=${userId}`);
-  if (!res.ok) return NextResponse.json({ error: "Алдаа гарлаа" }, { status: 500 });
+  if (!res.ok) return NextResponse.json({ error: "Failed to fetch bookings" }, { status: 500 });
 
   const all: any[] = await res.json();
   const now = new Date();
