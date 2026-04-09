@@ -1,8 +1,5 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { Resend } from 'resend';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function GET(req: Request) {
   const authHeader = req.headers.get("authorization");
@@ -11,90 +8,58 @@ export async function GET(req: Request) {
   }
 
   try {
+    // 1. Одоогийн цагийг авах
     const now = new Date();
     
-    // МӨНХИЙН ШИЙДЭЛ: 
-    // 48 цаг + Монголын 8 цагийн зөрүү = 56 цаг.
-    // Ингэснээр бааз дээр UTC-ээр хадгалагдсан хичээлүүд 
-    // Монгол цагаар "яг 48 цагийн өмнө" хаагдаж эхэлнэ.
-    const limitTime = new Date(now.getTime() + (48 + 8) * 60 * 60 * 1000);
+    // 2. МОНГОЛ ЦАГИЙН ЗӨРҮҮГ ЗАСАХ ЛОГИК (48 цаг):
+    // Бааз дээрх цаг Монгол цагаас 8 цагаар түрүүлж (UTC) хадгалагдсан байгаа тул
+    // 48 цагаас 8 цагийг хасч 40 цаг болгоно.
+    // Ингэснээр Frontend дээр 48 цагийн өмнө хаагдаж байгаа мэт яг зөв харагдана.
+    const limit48hAdjusted = new Date(now.getTime() + (48 - 8) * 60 * 60 * 1000);
 
     const sessions = await prisma.section.findMany({
       where: {
         status: true,
-        StartTime: { lte: limitTime }
+        StartTime: { lte: limit48hAdjusted }
       },
       include: {
-        bookings: { include: { user: true } },
         _count: { select: { bookings: true } },
+        bookings: { include: { user: true } }
       },
     });
 
-    const sessionUpdates = [];
-    const membershipUpdates = [];
-    const emailsToNotify = [];
+    const updates = [];
 
     for (const session of sessions) {
-      const startTime = new Date(session.StartTime);
-
-      // 1. Цаг нь өнгөрсөн бол шууд хаах
-      if (startTime <= now) {
-        sessionUpdates.push(
+      if (session._count.bookings < 3) {
+        // Хичээлийг хаах
+        updates.push(
           prisma.section.update({
             where: { id: session.id },
             data: { status: false }
           })
         );
-      } 
-      // 2. 48 цаг тулсан (Монгол цагаар тооцоход) бөгөөд 3-аас бага хүнтэй бол
-      else if (session._count.bookings < 3) {
-        sessionUpdates.push(
-          prisma.section.update({
-            where: { id: session.id },
-            data: { status: false }
-          })
-        );
-
-        // Хэрэглэгчдийн эрхийг буцаах
+        
+        // Хүмүүсийн эрхийг буцаах
         for (const booking of session.bookings) {
-          membershipUpdates.push(
+          updates.push(
             prisma.membership.update({
               where: { clerkId: booking.clerkId },
               data: { usedSessions: { decrement: 1 } }
             })
           );
-          
-          if (booking.user?.email) {
-            emailsToNotify.push({
-              email: booking.user.email,
-              name: booking.user.fullName,
-            });
-          }
         }
       }
     }
 
-    if (sessionUpdates.length > 0 || membershipUpdates.length > 0) {
-      await prisma.$transaction([...sessionUpdates, ...membershipUpdates]);
-    }
-
-    // Имэйл илгээх (Resend)
-    if (emailsToNotify.length > 0) {
-      await Promise.all(emailsToNotify.map(data => 
-        resend.emails.send({
-          from: 'Tokalot <onboarding@resend.dev>',
-          to: data.email,
-          subject: 'Хичээл цуцлагдсан мэдэгдэл',
-          html: `<p>Сайн байна уу, ${data.name}. Таны бүртгүүлсэн хичээл хүн хүрээгүй тул цуцлагдлаа. Эрх буцаж орсон.</p>`
-        })
-      )).catch(err => console.error("Email error:", err));
+    if (updates.length > 0) {
+      await prisma.$transaction(updates);
     }
 
     return NextResponse.json({
       success: true,
       processed: sessions.length,
-      currentTime: now.toISOString(),
-      checkLimit: limitTime.toISOString()
+      note: "48h logic with 8h timezone offset adjustment"
     });
 
   } catch (error: any) {
