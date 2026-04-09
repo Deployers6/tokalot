@@ -1,3 +1,5 @@
+
+
 // "use client";
 // import React, { useState, useEffect, useRef } from "react";
 // import {
@@ -67,7 +69,7 @@
 //   }
 // }
 
-// // ── CalendarPicker ──────────────────────────────────────────────
+// // ── CalendarPicker (Absolute Positioned for Frame) ──────────────
 // function CalendarPicker({
 //   selectedDate,
 //   onSelect,
@@ -103,18 +105,6 @@
 //   const firstDay = new Date(viewYear, viewMonth, 1).getDay();
 //   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
 
-//   const prevMonth = () => {
-//     if (viewMonth === 0) {
-//       setViewMonth(11);
-//       setViewYear((y) => y - 1);
-//     } else setViewMonth((m) => m - 1);
-//   };
-//   const nextMonth = () => {
-//     if (viewMonth === 11) {
-//       setViewMonth(0);
-//       setViewYear((y) => y + 1);
-//     } else setViewMonth((m) => m + 1);
-//   };
 //   const cells = [
 //     ...Array(firstDay).fill(null),
 //     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
@@ -122,39 +112,34 @@
 
 //   return (
 //     <div
-//       className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+//       className="absolute inset-0 z-[60] flex items-center justify-center p-4"
 //       onClick={onClose}
 //     >
 //       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
 //       <div
-//         className="relative bg-white rounded-3xl shadow-2xl p-5 w-full max-w-[320px]"
+//         className="relative bg-white rounded-3xl shadow-2xl p-5 w-full max-w-[280px]"
 //         onClick={(e) => e.stopPropagation()}
 //       >
 //         <div className="flex items-center justify-between mb-4">
 //           <button
-//             onClick={prevMonth}
+//             onClick={() => setViewMonth((m) => (m === 0 ? 11 : m - 1))}
 //             className="p-2 rounded-xl hover:bg-gray-100"
 //           >
-//             <ChevronLeft className="h-4 w-4 text-gray-600" />
+//             <ChevronLeft size={16} />
 //           </button>
-//           <span className="font-extrabold text-gray-800">
+//           <span className="font-extrabold text-sm text-gray-800">
 //             {MONTHS[viewMonth]} {viewYear}
 //           </span>
 //           <button
-//             onClick={nextMonth}
+//             onClick={() => setViewMonth((m) => (m === 11 ? 0 : m + 1))}
 //             className="p-2 rounded-xl hover:bg-gray-100"
 //           >
-//             <ChevronRight className="h-4 w-4 text-gray-600" />
+//             <ChevronRight size={16} />
 //           </button>
 //         </div>
-//         <div className="grid grid-cols-7 mb-1">
+//         <div className="grid grid-cols-7 mb-1 text-[10px] font-bold text-gray-400 text-center">
 //           {DAYS.map((d) => (
-//             <div
-//               key={d}
-//               className="text-center text-xs font-bold text-gray-400 py-1"
-//             >
-//               {d}
-//             </div>
+//             <div key={d}>{d}</div>
 //           ))}
 //         </div>
 //         <div className="grid grid-cols-7 gap-y-1">
@@ -162,7 +147,6 @@
 //             if (!day) return <div key={i} />;
 //             const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 //             const isSelected = dateStr === selectedDate;
-//             const hasSession = activeDates.has(dateStr);
 //             return (
 //               <button
 //                 key={i}
@@ -170,37 +154,20 @@
 //                   onSelect(dateStr);
 //                   onClose();
 //                 }}
-//                 className={`relative flex flex-col items-center justify-center h-9 w-9 mx-auto rounded-xl text-sm font-bold transition
-//                   ${isSelected ? "bg-[#20BEF9] text-white" : "hover:bg-[#E0F8FF] text-gray-700"}`}
+//                 className={`h-8 w-8 mx-auto rounded-lg text-xs font-bold transition flex items-center justify-center
+//                   ${isSelected ? "bg-[#20BEF9] text-white" : "hover:bg-blue-50 text-gray-700"}`}
 //               >
 //                 {day}
-//                 {hasSession && (
-//                   <span
-//                     className={`absolute bottom-1 h-1 w-1 rounded-full ${isSelected ? "bg-white" : "bg-[#20BEF9]"}`}
-//                   />
-//                 )}
 //               </button>
 //             );
 //           })}
 //         </div>
-//         <button
-//           onClick={() => {
-//             const t = new Date();
-//             onSelect(
-//               `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`,
-//             );
-//             onClose();
-//           }}
-//           className="mt-4 w-full py-2.5 rounded-xl bg-[#E0F8FF] text-[#006688] font-extrabold text-sm tracking-widest"
-//         >
-//           TODAY
-//         </button>
 //       </div>
 //     </div>
 //   );
 // }
 
-// // ── EditForm ───────────────────────────────────────────────────
+// // ── EditForm (Internal Component) ───────────────────────────────
 // function EditForm({
 //   section,
 //   teachers,
@@ -209,7 +176,6 @@
 //   onSuccess,
 // }: any) {
 //   const [loading, setLoading] = useState(false);
-//   const [deleting, setDeleting] = useState(false);
 //   const [error, setError] = useState("");
 //   const [form, setForm] = useState({
 //     title: section.title,
@@ -222,19 +188,16 @@
 
 //   const set = (e: any) =>
 //     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
-//   const localToUTC = (dateStr: string, timeStr: string) =>
-//     `${dateStr}T${timeStr}:00`;
 
 //   const handleSave = async (e: React.FormEvent) => {
 //     e.preventDefault();
 //     setLoading(true);
-//     setError("");
 //     try {
 //       const payload = {
 //         title: form.title,
 //         teacherId: form.teacherId,
-//         StartTime: localToUTC(form.sessionDate, form.startTime),
-//         endTime: localToUTC(form.sessionDate, form.endTime),
+//         StartTime: `${form.sessionDate}T${form.startTime}:00`,
+//         endTime: `${form.sessionDate}T${form.endTime}:00`,
 //         capacity: form.capacity,
 //       };
 //       const res = await fetch(
@@ -254,45 +217,20 @@
 //     }
 //   };
 
-//   const handleDelete = async () => {
-//     if (!confirm("Энэ session-г устгах уу?")) return;
-//     setDeleting(true);
-//     try {
-//       const res = await fetch(
-//         `${BACKEND_URL}/api/admin/delete.session/${section.id}`,
-//         { method: "DELETE" },
-//       );
-//       if (!res.ok) throw new Error("Delete failed");
-//       onSuccess();
-//     } catch (err: any) {
-//       setError(err.message);
-//     } finally {
-//       setDeleting(false);
-//     }
-//   };
-
-//   const inputCls =
-//     "bg-transparent outline-none text-sm w-full font-bold text-gray-700";
-//   const labelCls =
-//     "text-[10px] font-extrabold tracking-widest text-gray-500 uppercase";
+//   const inputCls = "bg-transparent outline-none text-sm w-full font-bold";
 
 //   return (
 //     <form onSubmit={handleSave} className="flex flex-col gap-3">
 //       <div className="flex items-center gap-3 mb-1">
 //         <button type="button" onClick={onClose} className="text-[#20BEF9]">
-//           <ArrowLeft size={24} />
+//           <ArrowLeft size={20} />
 //         </button>
 //         <h2 className="font-extrabold text-lg">Edit Session</h2>
 //       </div>
-
-//       {error && (
-//         <div className="bg-red-50 text-red-500 p-3 rounded-xl text-xs font-bold">
-//           ⚠️ {error}
-//         </div>
-//       )}
-
-//       <div className="bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-2.5 flex flex-col gap-0.5">
-//         <label className={labelCls}>SESSION NAME</label>
+//       <div className="bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-2 flex flex-col">
+//         <label className="text-[10px] font-extrabold text-gray-400">
+//           SESSION NAME
+//         </label>
 //         <input
 //           type="text"
 //           name="title"
@@ -302,57 +240,10 @@
 //           className={inputCls}
 //         />
 //       </div>
-
-//       <div className="bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-2.5 flex flex-col gap-0.5">
-//         <label className={labelCls}>SESSION DATE</label>
-//         <input
-//           type="date"
-//           name="sessionDate"
-//           value={form.sessionDate}
-//           onChange={set}
-//           required
-//           className={inputCls}
-//         />
-//       </div>
-
-//       <div className="flex gap-3">
-//         <div className="flex-1 bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-2.5 flex flex-col gap-0.5">
-//           <label className={labelCls}>START</label>
-//           <input
-//             type="time"
-//             name="startTime"
-//             value={form.startTime}
-//             onChange={set}
-//             required
-//             className={inputCls}
-//           />
-//         </div>
-//         <div className="flex-1 bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-2.5 flex flex-col gap-0.5">
-//           <label className={labelCls}>END</label>
-//           <input
-//             type="time"
-//             name="endTime"
-//             value={form.endTime}
-//             onChange={set}
-//             required
-//             className={inputCls}
-//           />
-//         </div>
-//       </div>
-
-//       <div className="bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-2.5 flex flex-col gap-0.5">
-//         <label className={labelCls}>SEATS</label>
-//         <input
-//           type="number"
-//           name="capacity"
-//           value={form.capacity}
-//           onChange={set}
-//           className={inputCls}
-//         />
-//       </div>
-
-//       <div className="bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-2.5 flex flex-col gap-0.5">
-//         <label className={labelCls}>TEACHER</label>
+//       <div className="bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-2 flex flex-col">
+//         <label className="text-[10px] font-extrabold text-gray-400">
+//           TEACHER
+//         </label>
 //         <select
 //           name="teacherId"
 //           value={form.teacherId}
@@ -366,26 +257,42 @@
 //           ))}
 //         </select>
 //       </div>
-
+//       <div className="flex gap-2">
+//         <div className="flex-1 bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-2 flex flex-col">
+//           <label className="text-[10px] font-extrabold text-gray-400">
+//             START
+//           </label>
+//           <input
+//             type="time"
+//             name="startTime"
+//             value={form.startTime}
+//             onChange={set}
+//             className={inputCls}
+//           />
+//         </div>
+//         <div className="flex-1 bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-2 flex flex-col">
+//           <label className="text-[10px] font-extrabold text-gray-400">
+//             END
+//           </label>
+//           <input
+//             type="time"
+//             name="endTime"
+//             value={form.endTime}
+//             onChange={set}
+//             className={inputCls}
+//           />
+//         </div>
+//       </div>
 //       <button
 //         type="submit"
 //         disabled={loading}
-//         className="bg-[#20BEF9] text-white font-extrabold tracking-widest py-4 rounded-xl flex items-center justify-center gap-2 mt-2"
+//         className="bg-[#20BEF9] text-white font-extrabold py-4 rounded-xl mt-2 flex justify-center"
 //       >
 //         {loading ? (
-//           <Loader2 className="animate-spin" size={18} />
+//           <Loader2 className="animate-spin" size={20} />
 //         ) : (
 //           "SAVE CHANGES"
 //         )}
-//       </button>
-
-//       <button
-//         type="button"
-//         onClick={handleDelete}
-//         disabled={deleting}
-//         className="text-red-400 font-extrabold text-sm py-2"
-//       >
-//         {deleting ? "DELETING..." : "DELETE SESSION"}
 //       </button>
 //     </form>
 //   );
@@ -407,13 +314,13 @@
 
 //   return (
 //     <div
-//       className="bg-white rounded-2xl p-4 shadow-sm border-l-[4px]"
+//       className="bg-white rounded-2xl p-4 shadow-sm border-l-4"
 //       style={{ borderLeftColor: color }}
 //     >
-//       <p className="text-[11px] font-bold mb-1" style={{ color: "#20BEF9" }}>
+//       <p className="text-[10px] font-bold mb-1" style={{ color: "#20BEF9" }}>
 //         {formatTime(section.StartTime)} - {formatTime(section.endTime)}
 //       </p>
-//       <div className="flex items-start justify-between gap-2">
+//       <div className="flex items-start justify-between">
 //         <h3
 //           className={`font-extrabold text-lg leading-tight ${cancelled ? "text-gray-300" : "text-gray-800"}`}
 //         >
@@ -422,25 +329,25 @@
 //         {!cancelled && (
 //           <button
 //             onClick={onEdit}
-//             className="bg-gray-100 p-2 rounded-xl text-gray-500 hover:bg-gray-200 transition"
+//             className="bg-gray-50 p-2 rounded-xl text-gray-400"
 //           >
 //             <PencilIcon size={14} />
 //           </button>
 //         )}
 //       </div>
-//       <div className="flex items-center gap-4 mt-2">
-//         <span className="flex items-center gap-1 text-[13px] text-gray-500">
-//           <User size={14} />
+//       <div className="flex items-center gap-3 mt-2 text-xs text-gray-500 font-medium">
+//         <span className="flex items-center gap-1">
+//           <User size={12} />
 //           {section.teacher?.fullName || "—"}
 //         </span>
-//         <span className="flex items-center gap-1 text-[13px] text-gray-500">
-//           <Users size={14} />
-//           {bookings}/{cap}
+//         <span className="flex items-center gap-1">
+//           <Users size={12} />
+//           {bookings}/{cap} Bookings
 //         </span>
 //       </div>
 //       <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
 //         <div
-//           className="h-full rounded-full transition-all duration-500"
+//           className="h-full transition-all duration-500"
 //           style={{ width: `${fillPct}%`, backgroundColor: color }}
 //         />
 //       </div>
@@ -448,7 +355,7 @@
 //   );
 // }
 
-// // ── Main Page (Desktop Center Wrapper) ───────────────────────────
+// // ── Main Component ──────────────────────────────────────────────
 // export default function Session() {
 //   const [sections, setSections] = useState<Section[]>([]);
 //   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -515,114 +422,110 @@
 //   const activeDates = new Set(sections.map((s) => isoToDateInput(s.StartTime)));
 
 //   return (
-//     // Desktop дээр цаанаа саарал nền-тэй, голдоо "Phone" байрлалтай харагдах Wrapper
-//     <div className="min-h-screen bg-gray-100 md:py-8">
-//       <div className="relative mx-auto w-full max-w-[430px] min-h-screen md:min-h-[850px] md:h-[850px] bg-[#F8FDFF] md:rounded-[40px] md:shadow-2xl overflow-hidden flex flex-col border-white md:border-[8px]">
-//         {/* Content Area */}
-//         <div className="flex-1 overflow-y-auto pb-24 scrollbar-hide">
-//           {/* Header */}
-//           <div className="px-5 py-5 flex items-center justify-between sticky top-0 bg-[#F8FDFF]/80 backdrop-blur-md z-10">
-//             <button
-//               onClick={() => setShowCalendar(true)}
-//               className="flex items-center gap-2 bg-[#E0F8FF] text-[#006688] font-bold text-sm px-4 py-2 rounded-full"
-//             >
-//               <CalendarIcon size={16} />
-//               {selectedDate}
-//               <span className="text-xs">▾</span>
-//             </button>
-//             <button
-//               onClick={() => openSheet("create")}
-//               className="bg-[#20BEF9] text-white rounded-2xl p-3 shadow-lg active:scale-95 transition"
-//             >
-//               <Plus size={24} />
-//             </button>
-//           </div>
+//     <div className="relative w-full min-h-full">
+//       {/* Date Selector */}
+//       <div className="px-5 py-4">
+//         <button
+//           onClick={() => setShowCalendar(true)}
+//           className="flex items-center gap-2 bg-[#E0F8FF] text-[#006688] font-bold text-xs px-4 py-2 rounded-full"
+//         >
+//           <CalendarIcon size={14} />
+//           {selectedDate} <span className="text-[10px]">▾</span>
+//         </button>
+//       </div>
 
-//           <div className="px-5">
-//             <div className="bg-[#E0F8FF] rounded-2xl px-4 py-3 flex items-start gap-2 mb-6">
-//               <Info className="h-4 w-4 text-[#006688] shrink-0 mt-0.5" />
-//               <p className="text-[11px] text-[#006688] font-medium leading-relaxed">
-//                 <span className="font-extrabold uppercase">Auto-Cancel:</span>{" "}
-//                 Sessions with &lt;3 participants 48h before start will be
-//                 closed.
-//               </p>
-//             </div>
+//       {/* Info Card */}
+//       <div className="mx-5 mb-5 bg-[#E0F8FF] rounded-2xl px-4 py-3 flex items-start gap-2 border border-[#A8E6FA]">
+//         <Info className="h-4 w-4 text-[#006688] shrink-0 mt-0.5" />
+//         <p className="text-[10px] text-[#006688] font-medium leading-relaxed">
+//           <span className="font-extrabold uppercase">Auto-Cancel:</span>{" "}
+//           Sessions with under 3 participants 48h before start will be closed.
+//         </p>
+//       </div>
 
-//             <h2 className="font-extrabold text-2xl text-gray-900 mb-4">
-//               Sessions
-//             </h2>
-
-//             <div className="flex flex-col gap-3">
-//               {loading ? (
-//                 <div className="py-20 flex justify-center">
-//                   <Loader2 className="animate-spin text-[#20BEF9]" size={32} />
-//                 </div>
-//               ) : filtered.length === 0 ? (
-//                 <div className="py-20 text-center text-gray-400 font-medium text-sm">
-//                   No sessions found for this date.
-//                 </div>
-//               ) : (
-//                 filtered.map((s) => (
-//                   <SessionCard
-//                     key={s.id}
-//                     section={s}
-//                     onEdit={() => openSheet(s)}
-//                   />
-//                 ))
-//               )}
-//             </div>
-//           </div>
+//       {/* Title & Add Button */}
+//       <div className="px-5 flex items-center justify-between mb-5">
+//         <div>
+//           <h2 className="font-extrabold text-2xl text-gray-900 leading-tight">
+//             Sessions
+//           </h2>
+//           <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">
+//             Schedule List
+//           </p>
 //         </div>
+//         <button
+//           onClick={() => openSheet("create")}
+//           className="bg-[#20BEF9] text-white rounded-2xl p-3 shadow-lg active:scale-90 transition"
+//         >
+//           <Plus size={24} />
+//         </button>
+//       </div>
 
-//         {/* Calendar Modal */}
-//         {showCalendar && (
-//           <CalendarPicker
-//             selectedDate={selectedDate}
-//             onSelect={setSelectedDate}
-//             onClose={() => setShowCalendar(false)}
-//             activeDates={activeDates}
-//           />
-//         )}
-
-//         {/* Slide-up Bottom Sheet */}
-//         {sheet && (
-//           <>
-//             <div
-//               onClick={closeSheet}
-//               className={`absolute inset-0 z-40 transition-opacity duration-300 bg-black/40 ${visible ? "opacity-100" : "opacity-0"}`}
-//             />
-//             <div
-//               className={`absolute bottom-0 left-0 right-0 z-50 bg-[#E0F8FF] rounded-t-[32px] px-6 pt-2 pb-10 transition-transform duration-500 ease-out shadow-2xl
-//               ${visible ? "translate-y-0" : "translate-y-full"}`}
-//             >
-//               <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-6" />
-//               {sheet === "create" ? (
-//                 <CreateSession
-//                   onClose={closeSheet}
-//                   onSuccess={() => {
-//                     fetchSections();
-//                     closeSheet();
-//                   }}
-//                   defaultDate={selectedDate}
-//                 />
-//               ) : (
-//                 <EditForm
-//                   section={sheet}
-//                   teachers={teachers}
-//                   onClose={closeSheet}
-//                   onSuccess={() => {
-//                     fetchSections();
-//                     closeSheet();
-//                   }}
-//                 />
-//               )}
-//             </div>
-//           </>
+//       {/* Sessions List */}
+//       <div className="px-5 flex flex-col gap-3">
+//         {loading ? (
+//           <div className="py-20 flex justify-center">
+//             <Loader2 className="animate-spin text-[#20BEF9]" size={32} />
+//           </div>
+//         ) : filtered.length === 0 ? (
+//           <div className="py-20 text-center text-gray-300 font-bold text-sm uppercase tracking-widest">
+//             No Sessions Found
+//           </div>
+//         ) : (
+//           filtered.map((s) => (
+//             <SessionCard key={s.id} section={s} onEdit={() => openSheet(s)} />
+//           ))
 //         )}
 //       </div>
+
+//       {/* Modals within the frame */}
+//       {showCalendar && (
+//         <CalendarPicker
+//           selectedDate={selectedDate}
+//           onSelect={setSelectedDate}
+//           onClose={() => setShowCalendar(false)}
+//           activeDates={activeDates}
+//         />
+//       )}
+
+//       {sheet && (
+//         <>
+//           <div
+//             onClick={closeSheet}
+//             className={`absolute inset-0 z-40 transition-opacity duration-300 bg-black/40 ${visible ? "opacity-100" : "opacity-0"}`}
+//           />
+//           <div
+//             className={`absolute bottom-0 left-0 right-0 z-50 bg-[#E0F8FF] rounded-t-[32px] px-6 pt-2 pb-10 transition-transform duration-500 ease-out shadow-2xl
+//             ${visible ? "translate-y-0" : "translate-y-full"}`}
+//           >
+//             <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-6" />
+//             {sheet === "create" ? (
+//               <CreateSession
+//                 onClose={closeSheet}
+//                 onSuccess={() => {
+//                   fetchSections();
+//                   closeSheet();
+//                 }}
+//                 defaultDate={selectedDate}
+//               />
+//             ) : (
+//               <EditForm
+//                 section={sheet}
+//                 teachers={teachers}
+//                 onClose={closeSheet}
+//                 onSuccess={() => {
+//                   fetchSections();
+//                   closeSheet();
+//                 }}
+//               />
+//             )}
+//           </div>
+//         </>
+//       )}
 //     </div>
 //   );
 // }
+
 
 "use client";
 import React, { useState, useEffect, useRef } from "react";
@@ -661,7 +564,6 @@ interface Section {
 
 const BACKEND_URL = "https://tokalot.vercel.app";
 
-// ── Helpers ──────────────────────────────────────────────────────
 function formatTime(iso: string) {
   try {
     const timePart = iso.includes("T") ? iso.split("T")[1] : iso;
@@ -693,7 +595,7 @@ function isoToTimeInput(iso: string) {
   }
 }
 
-// ── CalendarPicker (Absolute Positioned for Frame) ──────────────
+// ── CalendarPicker ──────────────────────────────────────────────
 function CalendarPicker({
   selectedDate,
   onSelect,
@@ -712,18 +614,8 @@ function CalendarPicker({
     () => parseInt(selectedDate.split("-")[1]) - 1,
   );
   const MONTHS = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
   ];
   const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
   const firstDay = new Date(viewYear, viewMonth, 1).getDay();
@@ -771,6 +663,8 @@ function CalendarPicker({
             if (!day) return <div key={i} />;
             const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
             const isSelected = dateStr === selectedDate;
+            const hasSession = activeDates.has(dateStr);
+
             return (
               <button
                 key={i}
@@ -778,10 +672,15 @@ function CalendarPicker({
                   onSelect(dateStr);
                   onClose();
                 }}
-                className={`h-8 w-8 mx-auto rounded-lg text-xs font-bold transition flex items-center justify-center
+                className={`h-8 w-8 mx-auto rounded-lg text-xs font-bold transition flex flex-col items-center justify-center gap-[2px]
                   ${isSelected ? "bg-[#20BEF9] text-white" : "hover:bg-blue-50 text-gray-700"}`}
               >
-                {day}
+                <span>{day}</span>
+                {hasSession && (
+                  <span
+                    className={`w-1 h-1 rounded-full ${isSelected ? "bg-white" : "bg-[#20BEF9]"}`}
+                  />
+                )}
               </button>
             );
           })}
@@ -791,7 +690,7 @@ function CalendarPicker({
   );
 }
 
-// ── EditForm (Internal Component) ───────────────────────────────
+// ── EditForm ────────────────────────────────────────────────────
 function EditForm({
   section,
   teachers,
@@ -1102,7 +1001,7 @@ export default function Session() {
         )}
       </div>
 
-      {/* Modals within the frame */}
+      {/* Calendar Modal */}
       {showCalendar && (
         <CalendarPicker
           selectedDate={selectedDate}
@@ -1112,6 +1011,7 @@ export default function Session() {
         />
       )}
 
+      {/* Bottom Sheet */}
       {sheet && (
         <>
           <div
