@@ -522,7 +522,7 @@
 // }
 
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   CalendarIcon,
   Loader2,
@@ -530,21 +530,15 @@ import {
   Plus,
   Users,
   User,
+  Lock,
   PencilIcon,
   Info,
   ChevronLeft,
   ChevronRight,
-  X,
   Trash2,
+  X,
 } from "lucide-react";
 import CreateSession from "./CreateSession";
-import {
-  formatSessionTime,
-  getSessionDateInputValue,
-  getSessionTimeInputValue,
-  getSessionToday,
-  toSessionISOString,
-} from "@/app/admin/lib/session-time";
 
 interface Teacher {
   id: string;
@@ -577,15 +571,34 @@ interface Section {
 const BACKEND_URL = "https://tokalot.vercel.app";
 
 function formatTime(iso: string) {
-  return formatSessionTime(iso);
+  try {
+    const timePart = iso.includes("T") ? iso.split("T")[1] : iso;
+    const [hour, minute] = timePart.split(":");
+    const h = parseInt(hour, 10);
+    const period = h >= 12 ? "PM" : "AM";
+    const display = h % 12 || 12;
+    return `${String(display).padStart(2, "0")}:${minute} ${period}`;
+  } catch {
+    return iso;
+  }
 }
 
 function isoToDateInput(iso: string) {
-  return getSessionDateInputValue(iso);
+  try {
+    return iso.split("T")[0];
+  } catch {
+    return "";
+  }
 }
 
 function isoToTimeInput(iso: string) {
-  return getSessionTimeInputValue(iso);
+  try {
+    const timePart = iso.includes("T") ? iso.split("T")[1] : iso;
+    const [hour, minute] = timePart.split(":");
+    return `${hour.padStart(2, "0")}:${minute}`;
+  } catch {
+    return "";
+  }
 }
 
 // ── CalendarPicker ──────────────────────────────────────────────
@@ -693,119 +706,120 @@ function CalendarPicker({
   );
 }
 
-// ── BookingsPopup ───────────────────────────────────────────────
-function BookingsPopup({
-  bookings,
+// ── BookingsModal ───────────────────────────────────────────────
+function BookingsModal({
+  section,
   onClose,
 }: {
-  bookings: Booking[];
+  section: Section;
   onClose: () => void;
 }) {
-  // Only show active bookings (status: true)
-  const activeBookings = bookings.filter((b) => b.status);
+  const activeBookings = (section.bookings || []).filter((b) => b.status);
+  const allBookings = section.bookings || [];
 
   return (
     <div
-      className="absolute inset-0 z-[60] flex items-center justify-center p-4"
+      className="absolute inset-0 z-[70] flex items-end justify-center"
       onClick={onClose}
-    >
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-      <div
-        className="relative bg-white rounded-3xl shadow-2xl p-5 w-full max-w-[300px]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-extrabold text-base text-gray-800">
-            Бүртгэлтэй хүмүүс
-          </h3>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-xl hover:bg-gray-100 text-gray-400"
-          >
-            <X size={16} />
-          </button>
-        </div>
-
-        {activeBookings.length === 0 ? (
-          <p className="text-center text-gray-400 font-bold text-sm py-4">
-            Бүртгэлтэй хүн байхгүй
-          </p>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {activeBookings.map((booking, idx) => (
-              <div
-                key={booking.id}
-                className="flex items-center gap-3 bg-[#E0F8FF] rounded-xl px-3 py-2.5"
-              >
-                <div className="w-7 h-7 rounded-full bg-[#20BEF9] flex items-center justify-center shrink-0">
-                  <User size={14} className="text-white" />
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase">
-                    Суралцагч {idx + 1}
-                  </span>
-                  <span className="text-xs font-extrabold text-gray-700 truncate">
-                    {booking.clerkId}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── DeleteConfirmPopup ──────────────────────────────────────────
-function DeleteConfirmPopup({
-  onConfirm,
-  onCancel,
-  loading,
-}: {
-  onConfirm: () => void;
-  onCancel: () => void;
-  loading: boolean;
-}) {
-  return (
-    <div
-      className="absolute inset-0 z-[70] flex items-center justify-center p-4"
-      onClick={onCancel}
     >
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
       <div
-        className="relative bg-white rounded-3xl shadow-2xl p-6 w-full max-w-[280px]"
+        className="relative bg-white rounded-t-[32px] w-full px-6 pt-4 pb-10 shadow-2xl max-h-[70%] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex flex-col items-center gap-3 mb-5">
-          <div className="w-12 h-12 rounded-2xl bg-red-100 flex items-center justify-center">
-            <Trash2 size={22} className="text-red-500" />
+        {/* Handle */}
+        <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4" />
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="font-extrabold text-lg text-gray-900">Bookings</h2>
+            <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">
+              {section.title}
+            </p>
           </div>
-          <h3 className="font-extrabold text-base text-gray-800 text-center">
-            Устгахдаа итгэлтэй байна уу?
-          </h3>
-          <p className="text-xs text-gray-400 font-medium text-center leading-relaxed">
-            Энэ үйлдлийг буцаах боломжгүй. Session бүрмөсөн устна.
-          </p>
+          <button
+            onClick={onClose}
+            className="bg-gray-100 p-2 rounded-xl text-gray-500"
+          >
+            <X size={18} />
+          </button>
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={onCancel}
-            className="flex-1 bg-gray-100 text-gray-600 font-extrabold py-3 rounded-xl text-sm"
-          >
-            Болих
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={loading}
-            className="flex-1 bg-red-500 text-white font-extrabold py-3 rounded-xl text-sm flex items-center justify-center"
-          >
-            {loading ? (
-              <Loader2 className="animate-spin" size={16} />
-            ) : (
-              "Устгах"
-            )}
-          </button>
+
+        {/* Stats */}
+        <div className="flex gap-3 mb-4">
+          <div className="flex-1 bg-[#E0F8FF] rounded-2xl px-4 py-3 text-center">
+            <p className="text-xl font-extrabold text-[#20BEF9]">
+              {activeBookings.length}
+            </p>
+            <p className="text-[10px] font-bold text-[#006688] uppercase">
+              Active
+            </p>
+          </div>
+          <div className="flex-1 bg-gray-50 rounded-2xl px-4 py-3 text-center">
+            <p className="text-xl font-extrabold text-gray-400">
+              {allBookings.length - activeBookings.length}
+            </p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase">
+              Cancelled
+            </p>
+          </div>
+          <div className="flex-1 bg-gray-50 rounded-2xl px-4 py-3 text-center">
+            <p className="text-xl font-extrabold text-gray-600">
+              {section.capacity}
+            </p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase">
+              Capacity
+            </p>
+          </div>
+        </div>
+
+        {/* Bookings List */}
+        <div className="overflow-y-auto flex-1 flex flex-col gap-2">
+          {allBookings.length === 0 ? (
+            <div className="py-10 text-center text-gray-300 font-bold text-sm uppercase tracking-widest">
+              No Bookings Yet
+            </div>
+          ) : (
+            allBookings.map((booking, index) => (
+              <div
+                key={booking.id}
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl border ${
+                  booking.status
+                    ? "bg-[#E0F8FF] border-[#A8E6FA]"
+                    : "bg-gray-50 border-gray-100"
+                }`}
+              >
+                <div
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center font-extrabold text-sm ${
+                    booking.status
+                      ? "bg-[#20BEF9] text-white"
+                      : "bg-gray-200 text-gray-400"
+                  }`}
+                >
+                  {index + 1}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-xs text-gray-700 truncate">
+                    {booking.clerkId}
+                  </p>
+                  <p className="text-[10px] text-gray-400 font-medium">
+                    {booking.isTrial ? "Trial" : "Regular"} ·{" "}
+                    {new Date(booking.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+                <span
+                  className={`text-[10px] font-extrabold uppercase px-2 py-1 rounded-lg ${
+                    booking.status
+                      ? "bg-[#20BEF9]/20 text-[#006688]"
+                      : "bg-gray-200 text-gray-400"
+                  }`}
+                >
+                  {booking.status ? "Active" : "Cancelled"}
+                </span>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>
@@ -813,11 +827,17 @@ function DeleteConfirmPopup({
 }
 
 // ── EditForm ────────────────────────────────────────────────────
-function EditForm({ section, teachers, onClose, onSuccess, onDeleted }: any) {
+function EditForm({
+  section,
+  teachers,
+  loadingTeachers,
+  onClose,
+  onSuccess,
+}: any) {
   const [loading, setLoading] = useState(false);
-  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState("");
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [form, setForm] = useState({
     title: section.title,
     sessionDate: isoToDateInput(section.StartTime),
@@ -837,8 +857,8 @@ function EditForm({ section, teachers, onClose, onSuccess, onDeleted }: any) {
       const payload = {
         title: form.title,
         teacherId: form.teacherId,
-        StartTime: toSessionISOString(form.sessionDate, form.startTime),
-        endTime: toSessionISOString(form.sessionDate, form.endTime),
+        StartTime: `${form.sessionDate}T${form.startTime}:00`,
+        endTime: `${form.sessionDate}T${form.endTime}:00`,
         capacity: form.capacity,
       };
       const res = await fetch(
@@ -859,126 +879,263 @@ function EditForm({ section, teachers, onClose, onSuccess, onDeleted }: any) {
   };
 
   const handleDelete = async () => {
-    setDeleteLoading(true);
+    setDeleting(true);
     try {
       const res = await fetch(
         `${BACKEND_URL}/api/admin/delete.session/${section.id}`,
-        {
-          method: "DELETE",
-        },
+        { method: "DELETE" },
       );
       if (!res.ok) throw new Error("Delete failed");
-      onDeleted();
+      onSuccess();
     } catch (err: any) {
       setError(err.message);
-      setShowDeleteConfirm(false);
-    } finally {
-      setDeleteLoading(false);
+      setDeleting(false);
+      setConfirmDelete(false);
     }
   };
 
   const inputCls = "bg-transparent outline-none text-sm w-full font-bold";
 
-  return (
-    <>
-      <form onSubmit={handleSave} className="flex flex-col gap-3">
+  // Confirm delete overlay
+  if (confirmDelete) {
+    return (
+      <div className="flex flex-col gap-4">
         <div className="flex items-center gap-3 mb-1">
-          <button type="button" onClick={onClose} className="text-[#20BEF9]">
+          <button
+            type="button"
+            onClick={() => setConfirmDelete(false)}
+            className="text-[#20BEF9]"
+          >
             <ArrowLeft size={20} />
           </button>
-          <h2 className="font-extrabold text-lg">Edit Session</h2>
+          <h2 className="font-extrabold text-lg">Delete Session</h2>
         </div>
-        <div className="bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-2 flex flex-col">
+        <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-4 text-center">
+          <Trash2 size={32} className="mx-auto mb-2 text-red-400" />
+          <p className="font-extrabold text-gray-800 mb-1">
+            Delete this session?
+          </p>
+          <p className="text-xs text-gray-500 font-medium">
+            "{section.title}" will be permanently removed. This action cannot be
+            undone.
+          </p>
+        </div>
+        {error && (
+          <p className="text-red-500 text-xs text-center font-bold">{error}</p>
+        )}
+        <button
+          onClick={handleDelete}
+          disabled={deleting}
+          className="bg-red-500 text-white font-extrabold py-4 rounded-xl flex justify-center"
+        >
+          {deleting ? (
+            <Loader2 className="animate-spin" size={20} />
+          ) : (
+            "YES, DELETE"
+          )}
+        </button>
+        <button
+          onClick={() => setConfirmDelete(false)}
+          className="bg-gray-100 text-gray-600 font-extrabold py-4 rounded-xl"
+        >
+          CANCEL
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSave} className="flex flex-col gap-3">
+      <div className="flex items-center gap-3 mb-1">
+        <button type="button" onClick={onClose} className="text-[#20BEF9]">
+          <ArrowLeft size={20} />
+        </button>
+        <h2 className="font-extrabold text-lg">Edit Session</h2>
+      </div>
+      <div className="bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-2 flex flex-col">
+        <label className="text-[10px] font-extrabold text-gray-400">
+          SESSION NAME
+        </label>
+        <input
+          type="text"
+          name="title"
+          value={form.title}
+          onChange={set}
+          required
+          className={inputCls}
+        />
+      </div>
+      <div className="bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-2 flex flex-col">
+        <label className="text-[10px] font-extrabold text-gray-400">
+          TEACHER
+        </label>
+        <select
+          name="teacherId"
+          value={form.teacherId}
+          onChange={set}
+          className={inputCls}
+        >
+          {teachers.map((t: any) => (
+            <option key={t.id} value={t.id}>
+              {t.fullName}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="flex gap-2">
+        <div className="flex-1 bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-2 flex flex-col">
           <label className="text-[10px] font-extrabold text-gray-400">
-            SESSION NAME
+            START
           </label>
           <input
-            type="text"
-            name="title"
-            value={form.title}
+            type="time"
+            name="startTime"
+            value={form.startTime}
             onChange={set}
-            required
             className={inputCls}
           />
         </div>
-        <div className="bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-2 flex flex-col">
+        <div className="flex-1 bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-2 flex flex-col">
           <label className="text-[10px] font-extrabold text-gray-400">
-            TEACHER
+            END
           </label>
-          <select
-            name="teacherId"
-            value={form.teacherId}
+          <input
+            type="time"
+            name="endTime"
+            value={form.endTime}
             onChange={set}
             className={inputCls}
+          />
+        </div>
+      </div>
+      {error && <p className="text-red-500 text-xs font-bold">{error}</p>}
+      <button
+        type="submit"
+        disabled={loading}
+        className="bg-[#20BEF9] text-white font-extrabold py-4 rounded-xl mt-1 flex justify-center"
+      >
+        {loading ? (
+          <Loader2 className="animate-spin" size={20} />
+        ) : (
+          "SAVE CHANGES"
+        )}
+      </button>
+      {/* Delete button for all sessions (active or cancelled) */}
+      <button
+        type="button"
+        onClick={() => setConfirmDelete(true)}
+        className="bg-red-50 text-red-500 border border-red-200 font-extrabold py-4 rounded-xl flex items-center justify-center gap-2"
+      >
+        <Trash2 size={16} />
+        DELETE SESSION
+      </button>
+    </form>
+  );
+}
+
+// ── CancelledEditForm ───────────────────────────────────────────
+function CancelledEditForm({
+  section,
+  onClose,
+  onSuccess,
+}: {
+  section: Section;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      const res = await fetch(
+        `${BACKEND_URL}/api/admin/delete.session/${section.id}`,
+        { method: "DELETE" },
+      );
+      if (!res.ok) throw new Error("Delete failed");
+      onSuccess();
+    } catch (err: any) {
+      setError(err.message);
+      setDeleting(false);
+      setConfirmDelete(false);
+    }
+  };
+
+  if (confirmDelete) {
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-3 mb-1">
+          <button
+            type="button"
+            onClick={() => setConfirmDelete(false)}
+            className="text-[#20BEF9]"
           >
-            {teachers.map((t: any) => (
-              <option key={t.id} value={t.id}>
-                {t.fullName}
-              </option>
-            ))}
-          </select>
+            <ArrowLeft size={20} />
+          </button>
+          <h2 className="font-extrabold text-lg">Delete Session</h2>
         </div>
-        <div className="flex gap-2">
-          <div className="flex-1 bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-2 flex flex-col">
-            <label className="text-[10px] font-extrabold text-gray-400">
-              START
-            </label>
-            <input
-              type="time"
-              name="startTime"
-              value={form.startTime}
-              onChange={set}
-              className={inputCls}
-            />
-          </div>
-          <div className="flex-1 bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-2 flex flex-col">
-            <label className="text-[10px] font-extrabold text-gray-400">
-              END
-            </label>
-            <input
-              type="time"
-              name="endTime"
-              value={form.endTime}
-              onChange={set}
-              className={inputCls}
-            />
-          </div>
+        <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-4 text-center">
+          <Trash2 size={32} className="mx-auto mb-2 text-red-400" />
+          <p className="font-extrabold text-gray-800 mb-1">
+            Delete this session?
+          </p>
+          <p className="text-xs text-gray-500 font-medium">
+            "{section.title}" will be permanently removed. This action cannot be
+            undone.
+          </p>
         </div>
-
-        {error ? (
-          <p className="text-xs text-red-500 font-bold text-center">{error}</p>
-        ) : null}
-
+        {error && (
+          <p className="text-red-500 text-xs text-center font-bold">{error}</p>
+        )}
         <button
-          type="submit"
-          disabled={loading}
-          className="bg-[#20BEF9] text-white font-extrabold py-4 rounded-xl mt-1 flex justify-center"
+          onClick={handleDelete}
+          disabled={deleting}
+          className="bg-red-500 text-white font-extrabold py-4 rounded-xl flex justify-center"
         >
-          {loading ? (
+          {deleting ? (
             <Loader2 className="animate-spin" size={20} />
           ) : (
-            "SAVE CHANGES"
+            "YES, DELETE"
           )}
         </button>
-
         <button
-          type="button"
-          onClick={() => setShowDeleteConfirm(true)}
-          className="flex items-center justify-center gap-2 bg-red-50 border border-red-200 text-red-500 font-extrabold py-3.5 rounded-xl"
+          onClick={() => setConfirmDelete(false)}
+          className="bg-gray-100 text-gray-600 font-extrabold py-4 rounded-xl"
         >
-          <Trash2 size={16} />
-          DELETE SESSION
+          CANCEL
         </button>
-      </form>
+      </div>
+    );
+  }
 
-      {showDeleteConfirm && (
-        <DeleteConfirmPopup
-          onConfirm={handleDelete}
-          onCancel={() => setShowDeleteConfirm(false)}
-          loading={deleteLoading}
-        />
-      )}
-    </>
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center gap-3 mb-1">
+        <button type="button" onClick={onClose} className="text-[#20BEF9]">
+          <ArrowLeft size={20} />
+        </button>
+        <h2 className="font-extrabold text-lg">Cancelled Session</h2>
+      </div>
+      <div className="bg-red-50 border border-red-100 rounded-2xl px-4 py-3">
+        <p className="font-extrabold text-gray-700 text-sm">{section.title}</p>
+        <p className="text-[11px] text-gray-400 font-medium mt-0.5">
+          {formatTime(section.StartTime)} — {formatTime(section.endTime)}
+        </p>
+        <p className="text-[11px] text-red-400 font-bold mt-1 uppercase tracking-wide">
+          This session has been cancelled
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={() => setConfirmDelete(true)}
+        className="bg-red-500 text-white font-extrabold py-4 rounded-xl flex items-center justify-center gap-2"
+      >
+        <Trash2 size={16} />
+        DELETE SESSION
+      </button>
+    </div>
   );
 }
 
@@ -986,73 +1143,74 @@ function EditForm({ section, teachers, onClose, onSuccess, onDeleted }: any) {
 function SessionCard({
   section,
   onEdit,
+  onViewBookings,
 }: {
   section: Section;
   onEdit: () => void;
+  onViewBookings: () => void;
 }) {
-  const [showBookings, setShowBookings] = useState(false);
-
-  // Only count active bookings (status: true)
-  const activeBookings = section.bookings?.filter((b) => b.status) ?? [];
-  const bookings = activeBookings.length;
+  // FIX #3: Only count active bookings (status: true)
+  const activeBookings = (section.bookings || []).filter(
+    (b) => b.status,
+  ).length;
+  const totalBookings = (section.bookings || []).length;
   const cap = section.capacity;
   const cancelled = !section.status;
-  const color = cancelled ? "#fca5a5" : bookings >= cap ? "#f59e0b" : "#20BEF9";
-  const fillPct = Math.min((bookings / cap) * 100, 100);
+  const color = cancelled
+    ? "#fca5a5"
+    : activeBookings >= cap
+      ? "#f59e0b"
+      : "#20BEF9";
+  const fillPct = Math.min((activeBookings / cap) * 100, 100);
 
   return (
-    <>
-      <div
-        className="bg-white rounded-2xl p-4 shadow-sm border-l-4"
-        style={{ borderLeftColor: color }}
-      >
-        <p className="text-[10px] font-bold mb-1" style={{ color: "#20BEF9" }}>
-          {formatTime(section.StartTime)} - {formatTime(section.endTime)}
-        </p>
-        <div className="flex items-start justify-between">
-          <h3
-            className={`font-extrabold text-lg leading-tight ${cancelled ? "text-gray-300" : "text-gray-800"}`}
-          >
-            {section.title}
-          </h3>
-          {!cancelled && (
-            <button
-              onClick={onEdit}
-              className="bg-gray-50 p-2 rounded-xl text-gray-400"
-            >
-              <PencilIcon size={14} />
-            </button>
-          )}
-        </div>
-        <div className="flex items-center gap-3 mt-2 text-xs text-gray-500 font-medium">
-          <span className="flex items-center gap-1">
-            <User size={12} />
-            {section.teacher?.fullName || "—"}
-          </span>
-          {/* Clickable bookings count */}
-          <button
-            onClick={() => setShowBookings(true)}
-            className="flex items-center gap-1 hover:text-[#20BEF9] transition-colors"
-          >
-            <Users size={12} />
-            {bookings}/{cap} Bookings
-          </button>
-        </div>
-        <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-          <div
-            className="h-full transition-all duration-500"
-            style={{ width: `${fillPct}%`, backgroundColor: color }}
-          />
-        </div>
+    <div
+      className="bg-white rounded-2xl p-4 shadow-sm border-l-4"
+      style={{ borderLeftColor: color }}
+    >
+      <p className="text-[10px] font-bold mb-1" style={{ color: "#20BEF9" }}>
+        {formatTime(section.StartTime)} - {formatTime(section.endTime)}
+      </p>
+      <div className="flex items-start justify-between">
+        <h3
+          className={`font-extrabold text-lg leading-tight ${cancelled ? "text-gray-300" : "text-gray-800"}`}
+        >
+          {section.title}
+        </h3>
+        {/* FIX #1 & #2: Show edit button for ALL sessions including cancelled */}
+        <button
+          onClick={onEdit}
+          className="bg-gray-50 p-2 rounded-xl text-gray-400"
+        >
+          <PencilIcon size={14} />
+        </button>
       </div>
-
-      {showBookings && (
-        <BookingsPopup
-          bookings={section.bookings ?? []}
-          onClose={() => setShowBookings(false)}
+      <div className="flex items-center gap-3 mt-2 text-xs text-gray-500 font-medium">
+        <span className="flex items-center gap-1">
+          <User size={12} />
+          {section.teacher?.fullName || "—"}
+        </span>
+        {/* FIX #3 & #4: Show active/total, tap to view bookings */}
+        <button
+          onClick={onViewBookings}
+          className="flex items-center gap-1 hover:text-[#20BEF9] transition-colors"
+        >
+          <Users size={12} />
+          {activeBookings}/{cap} Bookings
+          {totalBookings > activeBookings && (
+            <span className="text-[10px] text-gray-400">
+              ({totalBookings - activeBookings} cancelled)
+            </span>
+          )}
+        </button>
+      </div>
+      <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+        <div
+          className="h-full transition-all duration-500"
+          style={{ width: `${fillPct}%`, backgroundColor: color }}
         />
-      )}
-    </>
+      </div>
+    </div>
   );
 }
 
@@ -1061,10 +1219,14 @@ export default function Session() {
   const [sections, setSections] = useState<Section[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState(() => getSessionToday());
+  const [selectedDate, setSelectedDate] = useState(
+    () => new Date().toISOString().split("T")[0],
+  );
   const [showCalendar, setShowCalendar] = useState(false);
   const [sheet, setSheet] = useState<null | "create" | Section>(null);
   const [visible, setVisible] = useState(false);
+  // FIX #4: Bookings modal state
+  const [bookingsSection, setBookingsSection] = useState<Section | null>(null);
 
   const fetchSections = async () => {
     setLoading(true);
@@ -1172,7 +1334,12 @@ export default function Session() {
           </div>
         ) : (
           filtered.map((s) => (
-            <SessionCard key={s.id} section={s} onEdit={() => openSheet(s)} />
+            <SessionCard
+              key={s.id}
+              section={s}
+              onEdit={() => openSheet(s)}
+              onViewBookings={() => setBookingsSection(s)}
+            />
           ))
         )}
       </div>
@@ -1184,6 +1351,14 @@ export default function Session() {
           onSelect={setSelectedDate}
           onClose={() => setShowCalendar(false)}
           activeDates={activeDates}
+        />
+      )}
+
+      {/* FIX #4: Bookings Modal */}
+      {bookingsSection && (
+        <BookingsModal
+          section={bookingsSection}
+          onClose={() => setBookingsSection(null)}
         />
       )}
 
@@ -1208,7 +1383,8 @@ export default function Session() {
                 }}
                 defaultDate={selectedDate}
               />
-            ) : (
+            ) : sheet.status ? (
+              // Active session → full edit + delete
               <EditForm
                 section={sheet}
                 teachers={teachers}
@@ -1217,7 +1393,13 @@ export default function Session() {
                   fetchSections();
                   closeSheet();
                 }}
-                onDeleted={() => {
+              />
+            ) : (
+              // Cancelled session → delete only
+              <CancelledEditForm
+                section={sheet}
+                onClose={closeSheet}
+                onSuccess={() => {
                   fetchSections();
                   closeSheet();
                 }}
