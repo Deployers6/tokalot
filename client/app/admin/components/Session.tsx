@@ -1,5 +1,3 @@
-
-
 // "use client";
 // import React, { useState, useEffect, useRef } from "react";
 // import {
@@ -37,7 +35,6 @@
 
 // const BACKEND_URL = "https://tokalot.vercel.app";
 
-// // ── Helpers ──────────────────────────────────────────────────────
 // function formatTime(iso: string) {
 //   try {
 //     const timePart = iso.includes("T") ? iso.split("T")[1] : iso;
@@ -69,7 +66,7 @@
 //   }
 // }
 
-// // ── CalendarPicker (Absolute Positioned for Frame) ──────────────
+// // ── CalendarPicker ──────────────────────────────────────────────
 // function CalendarPicker({
 //   selectedDate,
 //   onSelect,
@@ -88,18 +85,8 @@
 //     () => parseInt(selectedDate.split("-")[1]) - 1,
 //   );
 //   const MONTHS = [
-//     "January",
-//     "February",
-//     "March",
-//     "April",
-//     "May",
-//     "June",
-//     "July",
-//     "August",
-//     "September",
-//     "October",
-//     "November",
-//     "December",
+//     "January", "February", "March", "April", "May", "June",
+//     "July", "August", "September", "October", "November", "December",
 //   ];
 //   const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 //   const firstDay = new Date(viewYear, viewMonth, 1).getDay();
@@ -147,6 +134,8 @@
 //             if (!day) return <div key={i} />;
 //             const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 //             const isSelected = dateStr === selectedDate;
+//             const hasSession = activeDates.has(dateStr);
+
 //             return (
 //               <button
 //                 key={i}
@@ -154,10 +143,15 @@
 //                   onSelect(dateStr);
 //                   onClose();
 //                 }}
-//                 className={`h-8 w-8 mx-auto rounded-lg text-xs font-bold transition flex items-center justify-center
+//                 className={`h-8 w-8 mx-auto rounded-lg text-xs font-bold transition flex flex-col items-center justify-center gap-[2px]
 //                   ${isSelected ? "bg-[#20BEF9] text-white" : "hover:bg-blue-50 text-gray-700"}`}
 //               >
-//                 {day}
+//                 <span>{day}</span>
+//                 {hasSession && (
+//                   <span
+//                     className={`w-1 h-1 rounded-full ${isSelected ? "bg-white" : "bg-[#20BEF9]"}`}
+//                   />
+//                 )}
 //               </button>
 //             );
 //           })}
@@ -167,7 +161,7 @@
 //   );
 // }
 
-// // ── EditForm (Internal Component) ───────────────────────────────
+// // ── EditForm ────────────────────────────────────────────────────
 // function EditForm({
 //   section,
 //   teachers,
@@ -478,7 +472,7 @@
 //         )}
 //       </div>
 
-//       {/* Modals within the frame */}
+//       {/* Calendar Modal */}
 //       {showCalendar && (
 //         <CalendarPicker
 //           selectedDate={selectedDate}
@@ -488,6 +482,7 @@
 //         />
 //       )}
 
+//       {/* Bottom Sheet */}
 //       {sheet && (
 //         <>
 //           <div
@@ -526,9 +521,8 @@
 //   );
 // }
 
-
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   CalendarIcon,
   Loader2,
@@ -536,17 +530,35 @@ import {
   Plus,
   Users,
   User,
-  Lock,
   PencilIcon,
   Info,
   ChevronLeft,
   ChevronRight,
+  X,
+  Trash2,
 } from "lucide-react";
 import CreateSession from "./CreateSession";
+import {
+  formatSessionTime,
+  getSessionDateInputValue,
+  getSessionTimeInputValue,
+  getSessionToday,
+  toSessionISOString,
+} from "@/app/admin/lib/session-time";
 
 interface Teacher {
   id: string;
   fullName: string;
+}
+
+interface Booking {
+  id: string;
+  clerkId: string;
+  sectionId: string;
+  status: boolean;
+  isTrial: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface Section {
@@ -559,40 +571,21 @@ interface Section {
   endTime: string;
   capacity: number;
   status: boolean;
-  bookings?: any[];
+  bookings?: Booking[];
 }
 
 const BACKEND_URL = "https://tokalot.vercel.app";
 
 function formatTime(iso: string) {
-  try {
-    const timePart = iso.includes("T") ? iso.split("T")[1] : iso;
-    const [hour, minute] = timePart.split(":");
-    const h = parseInt(hour, 10);
-    const period = h >= 12 ? "PM" : "AM";
-    const display = h % 12 || 12;
-    return `${String(display).padStart(2, "0")}:${minute} ${period}`;
-  } catch {
-    return iso;
-  }
+  return formatSessionTime(iso);
 }
 
 function isoToDateInput(iso: string) {
-  try {
-    return iso.split("T")[0];
-  } catch {
-    return "";
-  }
+  return getSessionDateInputValue(iso);
 }
 
 function isoToTimeInput(iso: string) {
-  try {
-    const timePart = iso.includes("T") ? iso.split("T")[1] : iso;
-    const [hour, minute] = timePart.split(":");
-    return `${hour.padStart(2, "0")}:${minute}`;
-  } catch {
-    return "";
-  }
+  return getSessionTimeInputValue(iso);
 }
 
 // ── CalendarPicker ──────────────────────────────────────────────
@@ -614,8 +607,18 @@ function CalendarPicker({
     () => parseInt(selectedDate.split("-")[1]) - 1,
   );
   const MONTHS = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
   const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
   const firstDay = new Date(viewYear, viewMonth, 1).getDay();
@@ -690,16 +693,131 @@ function CalendarPicker({
   );
 }
 
-// ── EditForm ────────────────────────────────────────────────────
-function EditForm({
-  section,
-  teachers,
-  loadingTeachers,
+// ── BookingsPopup ───────────────────────────────────────────────
+function BookingsPopup({
+  bookings,
   onClose,
-  onSuccess,
-}: any) {
+}: {
+  bookings: Booking[];
+  onClose: () => void;
+}) {
+  // Only show active bookings (status: true)
+  const activeBookings = bookings.filter((b) => b.status);
+
+  return (
+    <div
+      className="absolute inset-0 z-[60] flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+      <div
+        className="relative bg-white rounded-3xl shadow-2xl p-5 w-full max-w-[300px]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-extrabold text-base text-gray-800">
+            Бүртгэлтэй хүмүүс
+          </h3>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-xl hover:bg-gray-100 text-gray-400"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {activeBookings.length === 0 ? (
+          <p className="text-center text-gray-400 font-bold text-sm py-4">
+            Бүртгэлтэй хүн байхгүй
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {activeBookings.map((booking, idx) => (
+              <div
+                key={booking.id}
+                className="flex items-center gap-3 bg-[#E0F8FF] rounded-xl px-3 py-2.5"
+              >
+                <div className="w-7 h-7 rounded-full bg-[#20BEF9] flex items-center justify-center shrink-0">
+                  <User size={14} className="text-white" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase">
+                    Суралцагч {idx + 1}
+                  </span>
+                  <span className="text-xs font-extrabold text-gray-700 truncate">
+                    {booking.clerkId}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── DeleteConfirmPopup ──────────────────────────────────────────
+function DeleteConfirmPopup({
+  onConfirm,
+  onCancel,
+  loading,
+}: {
+  onConfirm: () => void;
+  onCancel: () => void;
+  loading: boolean;
+}) {
+  return (
+    <div
+      className="absolute inset-0 z-[70] flex items-center justify-center p-4"
+      onClick={onCancel}
+    >
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <div
+        className="relative bg-white rounded-3xl shadow-2xl p-6 w-full max-w-[280px]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex flex-col items-center gap-3 mb-5">
+          <div className="w-12 h-12 rounded-2xl bg-red-100 flex items-center justify-center">
+            <Trash2 size={22} className="text-red-500" />
+          </div>
+          <h3 className="font-extrabold text-base text-gray-800 text-center">
+            Устгахдаа итгэлтэй байна уу?
+          </h3>
+          <p className="text-xs text-gray-400 font-medium text-center leading-relaxed">
+            Энэ үйлдлийг буцаах боломжгүй. Session бүрмөсөн устна.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={onCancel}
+            className="flex-1 bg-gray-100 text-gray-600 font-extrabold py-3 rounded-xl text-sm"
+          >
+            Болих
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            className="flex-1 bg-red-500 text-white font-extrabold py-3 rounded-xl text-sm flex items-center justify-center"
+          >
+            {loading ? (
+              <Loader2 className="animate-spin" size={16} />
+            ) : (
+              "Устгах"
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── EditForm ────────────────────────────────────────────────────
+function EditForm({ section, teachers, onClose, onSuccess, onDeleted }: any) {
   const [loading, setLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [form, setForm] = useState({
     title: section.title,
     sessionDate: isoToDateInput(section.StartTime),
@@ -719,8 +837,8 @@ function EditForm({
       const payload = {
         title: form.title,
         teacherId: form.teacherId,
-        StartTime: `${form.sessionDate}T${form.startTime}:00`,
-        endTime: `${form.sessionDate}T${form.endTime}:00`,
+        StartTime: toSessionISOString(form.sessionDate, form.startTime),
+        endTime: toSessionISOString(form.sessionDate, form.endTime),
         capacity: form.capacity,
       };
       const res = await fetch(
@@ -740,84 +858,127 @@ function EditForm({
     }
   };
 
+  const handleDelete = async () => {
+    setDeleteLoading(true);
+    try {
+      const res = await fetch(
+        `${BACKEND_URL}/api/admin/delete.session/${section.id}`,
+        {
+          method: "DELETE",
+        },
+      );
+      if (!res.ok) throw new Error("Delete failed");
+      onDeleted();
+    } catch (err: any) {
+      setError(err.message);
+      setShowDeleteConfirm(false);
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   const inputCls = "bg-transparent outline-none text-sm w-full font-bold";
 
   return (
-    <form onSubmit={handleSave} className="flex flex-col gap-3">
-      <div className="flex items-center gap-3 mb-1">
-        <button type="button" onClick={onClose} className="text-[#20BEF9]">
-          <ArrowLeft size={20} />
-        </button>
-        <h2 className="font-extrabold text-lg">Edit Session</h2>
-      </div>
-      <div className="bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-2 flex flex-col">
-        <label className="text-[10px] font-extrabold text-gray-400">
-          SESSION NAME
-        </label>
-        <input
-          type="text"
-          name="title"
-          value={form.title}
-          onChange={set}
-          required
-          className={inputCls}
-        />
-      </div>
-      <div className="bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-2 flex flex-col">
-        <label className="text-[10px] font-extrabold text-gray-400">
-          TEACHER
-        </label>
-        <select
-          name="teacherId"
-          value={form.teacherId}
-          onChange={set}
-          className={inputCls}
+    <>
+      <form onSubmit={handleSave} className="flex flex-col gap-3">
+        <div className="flex items-center gap-3 mb-1">
+          <button type="button" onClick={onClose} className="text-[#20BEF9]">
+            <ArrowLeft size={20} />
+          </button>
+          <h2 className="font-extrabold text-lg">Edit Session</h2>
+        </div>
+        <div className="bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-2 flex flex-col">
+          <label className="text-[10px] font-extrabold text-gray-400">
+            SESSION NAME
+          </label>
+          <input
+            type="text"
+            name="title"
+            value={form.title}
+            onChange={set}
+            required
+            className={inputCls}
+          />
+        </div>
+        <div className="bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-2 flex flex-col">
+          <label className="text-[10px] font-extrabold text-gray-400">
+            TEACHER
+          </label>
+          <select
+            name="teacherId"
+            value={form.teacherId}
+            onChange={set}
+            className={inputCls}
+          >
+            {teachers.map((t: any) => (
+              <option key={t.id} value={t.id}>
+                {t.fullName}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex gap-2">
+          <div className="flex-1 bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-2 flex flex-col">
+            <label className="text-[10px] font-extrabold text-gray-400">
+              START
+            </label>
+            <input
+              type="time"
+              name="startTime"
+              value={form.startTime}
+              onChange={set}
+              className={inputCls}
+            />
+          </div>
+          <div className="flex-1 bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-2 flex flex-col">
+            <label className="text-[10px] font-extrabold text-gray-400">
+              END
+            </label>
+            <input
+              type="time"
+              name="endTime"
+              value={form.endTime}
+              onChange={set}
+              className={inputCls}
+            />
+          </div>
+        </div>
+
+        {error ? (
+          <p className="text-xs text-red-500 font-bold text-center">{error}</p>
+        ) : null}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="bg-[#20BEF9] text-white font-extrabold py-4 rounded-xl mt-1 flex justify-center"
         >
-          {teachers.map((t: any) => (
-            <option key={t.id} value={t.id}>
-              {t.fullName}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="flex gap-2">
-        <div className="flex-1 bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-2 flex flex-col">
-          <label className="text-[10px] font-extrabold text-gray-400">
-            START
-          </label>
-          <input
-            type="time"
-            name="startTime"
-            value={form.startTime}
-            onChange={set}
-            className={inputCls}
-          />
-        </div>
-        <div className="flex-1 bg-[#D6F4FF] border border-[#A8E6FA] rounded-xl px-4 py-2 flex flex-col">
-          <label className="text-[10px] font-extrabold text-gray-400">
-            END
-          </label>
-          <input
-            type="time"
-            name="endTime"
-            value={form.endTime}
-            onChange={set}
-            className={inputCls}
-          />
-        </div>
-      </div>
-      <button
-        type="submit"
-        disabled={loading}
-        className="bg-[#20BEF9] text-white font-extrabold py-4 rounded-xl mt-2 flex justify-center"
-      >
-        {loading ? (
-          <Loader2 className="animate-spin" size={20} />
-        ) : (
-          "SAVE CHANGES"
-        )}
-      </button>
-    </form>
+          {loading ? (
+            <Loader2 className="animate-spin" size={20} />
+          ) : (
+            "SAVE CHANGES"
+          )}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setShowDeleteConfirm(true)}
+          className="flex items-center justify-center gap-2 bg-red-50 border border-red-200 text-red-500 font-extrabold py-3.5 rounded-xl"
+        >
+          <Trash2 size={16} />
+          DELETE SESSION
+        </button>
+      </form>
+
+      {showDeleteConfirm && (
+        <DeleteConfirmPopup
+          onConfirm={handleDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
+          loading={deleteLoading}
+        />
+      )}
+    </>
   );
 }
 
@@ -829,52 +990,69 @@ function SessionCard({
   section: Section;
   onEdit: () => void;
 }) {
-  const bookings = section.bookings?.length ?? 0;
+  const [showBookings, setShowBookings] = useState(false);
+
+  // Only count active bookings (status: true)
+  const activeBookings = section.bookings?.filter((b) => b.status) ?? [];
+  const bookings = activeBookings.length;
   const cap = section.capacity;
   const cancelled = !section.status;
   const color = cancelled ? "#fca5a5" : bookings >= cap ? "#f59e0b" : "#20BEF9";
   const fillPct = Math.min((bookings / cap) * 100, 100);
 
   return (
-    <div
-      className="bg-white rounded-2xl p-4 shadow-sm border-l-4"
-      style={{ borderLeftColor: color }}
-    >
-      <p className="text-[10px] font-bold mb-1" style={{ color: "#20BEF9" }}>
-        {formatTime(section.StartTime)} - {formatTime(section.endTime)}
-      </p>
-      <div className="flex items-start justify-between">
-        <h3
-          className={`font-extrabold text-lg leading-tight ${cancelled ? "text-gray-300" : "text-gray-800"}`}
-        >
-          {section.title}
-        </h3>
-        {!cancelled && (
-          <button
-            onClick={onEdit}
-            className="bg-gray-50 p-2 rounded-xl text-gray-400"
+    <>
+      <div
+        className="bg-white rounded-2xl p-4 shadow-sm border-l-4"
+        style={{ borderLeftColor: color }}
+      >
+        <p className="text-[10px] font-bold mb-1" style={{ color: "#20BEF9" }}>
+          {formatTime(section.StartTime)} - {formatTime(section.endTime)}
+        </p>
+        <div className="flex items-start justify-between">
+          <h3
+            className={`font-extrabold text-lg leading-tight ${cancelled ? "text-gray-300" : "text-gray-800"}`}
           >
-            <PencilIcon size={14} />
+            {section.title}
+          </h3>
+          {!cancelled && (
+            <button
+              onClick={onEdit}
+              className="bg-gray-50 p-2 rounded-xl text-gray-400"
+            >
+              <PencilIcon size={14} />
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-3 mt-2 text-xs text-gray-500 font-medium">
+          <span className="flex items-center gap-1">
+            <User size={12} />
+            {section.teacher?.fullName || "—"}
+          </span>
+          {/* Clickable bookings count */}
+          <button
+            onClick={() => setShowBookings(true)}
+            className="flex items-center gap-1 hover:text-[#20BEF9] transition-colors"
+          >
+            <Users size={12} />
+            {bookings}/{cap} Bookings
           </button>
-        )}
+        </div>
+        <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+          <div
+            className="h-full transition-all duration-500"
+            style={{ width: `${fillPct}%`, backgroundColor: color }}
+          />
+        </div>
       </div>
-      <div className="flex items-center gap-3 mt-2 text-xs text-gray-500 font-medium">
-        <span className="flex items-center gap-1">
-          <User size={12} />
-          {section.teacher?.fullName || "—"}
-        </span>
-        <span className="flex items-center gap-1">
-          <Users size={12} />
-          {bookings}/{cap} Bookings
-        </span>
-      </div>
-      <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-        <div
-          className="h-full transition-all duration-500"
-          style={{ width: `${fillPct}%`, backgroundColor: color }}
+
+      {showBookings && (
+        <BookingsPopup
+          bookings={section.bookings ?? []}
+          onClose={() => setShowBookings(false)}
         />
-      </div>
-    </div>
+      )}
+    </>
   );
 }
 
@@ -883,9 +1061,7 @@ export default function Session() {
   const [sections, setSections] = useState<Section[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState(
-    () => new Date().toISOString().split("T")[0],
-  );
+  const [selectedDate, setSelectedDate] = useState(() => getSessionToday());
   const [showCalendar, setShowCalendar] = useState(false);
   const [sheet, setSheet] = useState<null | "create" | Section>(null);
   const [visible, setVisible] = useState(false);
@@ -1038,6 +1214,10 @@ export default function Session() {
                 teachers={teachers}
                 onClose={closeSheet}
                 onSuccess={() => {
+                  fetchSections();
+                  closeSheet();
+                }}
+                onDeleted={() => {
                   fetchSections();
                   closeSheet();
                 }}
