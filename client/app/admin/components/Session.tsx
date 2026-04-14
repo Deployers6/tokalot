@@ -1,5 +1,3 @@
-
-
 // "use client";
 // import React, { useState, useEffect, useRef } from "react";
 // import {
@@ -37,7 +35,6 @@
 
 // const BACKEND_URL = "https://tokalot.vercel.app";
 
-// // ── Helpers ──────────────────────────────────────────────────────
 // function formatTime(iso: string) {
 //   try {
 //     const timePart = iso.includes("T") ? iso.split("T")[1] : iso;
@@ -69,7 +66,7 @@
 //   }
 // }
 
-// // ── CalendarPicker (Absolute Positioned for Frame) ──────────────
+// // ── CalendarPicker ──────────────────────────────────────────────
 // function CalendarPicker({
 //   selectedDate,
 //   onSelect,
@@ -147,6 +144,8 @@
 //             if (!day) return <div key={i} />;
 //             const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 //             const isSelected = dateStr === selectedDate;
+//             const hasSession = activeDates.has(dateStr);
+
 //             return (
 //               <button
 //                 key={i}
@@ -154,10 +153,15 @@
 //                   onSelect(dateStr);
 //                   onClose();
 //                 }}
-//                 className={`h-8 w-8 mx-auto rounded-lg text-xs font-bold transition flex items-center justify-center
+//                 className={`h-8 w-8 mx-auto rounded-lg text-xs font-bold transition flex flex-col items-center justify-center gap-[2px]
 //                   ${isSelected ? "bg-[#20BEF9] text-white" : "hover:bg-blue-50 text-gray-700"}`}
 //               >
-//                 {day}
+//                 <span>{day}</span>
+//                 {hasSession && (
+//                   <span
+//                     className={`w-1 h-1 rounded-full ${isSelected ? "bg-white" : "bg-[#20BEF9]"}`}
+//                   />
+//                 )}
 //               </button>
 //             );
 //           })}
@@ -167,7 +171,7 @@
 //   );
 // }
 
-// // ── EditForm (Internal Component) ───────────────────────────────
+// // ── EditForm ────────────────────────────────────────────────────
 // function EditForm({
 //   section,
 //   teachers,
@@ -478,7 +482,7 @@
 //         )}
 //       </div>
 
-//       {/* Modals within the frame */}
+//       {/* Calendar Modal */}
 //       {showCalendar && (
 //         <CalendarPicker
 //           selectedDate={selectedDate}
@@ -488,6 +492,7 @@
 //         />
 //       )}
 
+//       {/* Bottom Sheet */}
 //       {sheet && (
 //         <>
 //           <div
@@ -526,9 +531,8 @@
 //   );
 // }
 
-
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   CalendarIcon,
   Loader2,
@@ -536,7 +540,6 @@ import {
   Plus,
   Users,
   User,
-  Lock,
   PencilIcon,
   Info,
   ChevronLeft,
@@ -595,7 +598,6 @@ function isoToTimeInput(iso: string) {
   }
 }
 
-// ── CalendarPicker ──────────────────────────────────────────────
 function CalendarPicker({
   selectedDate,
   onSelect,
@@ -614,8 +616,18 @@ function CalendarPicker({
     () => parseInt(selectedDate.split("-")[1]) - 1,
   );
   const MONTHS = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
   const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
   const firstDay = new Date(viewYear, viewMonth, 1).getDay();
@@ -690,14 +702,7 @@ function CalendarPicker({
   );
 }
 
-// ── EditForm ────────────────────────────────────────────────────
-function EditForm({
-  section,
-  teachers,
-  loadingTeachers,
-  onClose,
-  onSuccess,
-}: any) {
+function EditForm({ section, teachers, onClose, onSuccess }: any) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({
@@ -806,6 +811,7 @@ function EditForm({
           />
         </div>
       </div>
+      {error ? <p className="text-red-500 text-xs">{error}</p> : null}
       <button
         type="submit"
         disabled={loading}
@@ -821,7 +827,6 @@ function EditForm({
   );
 }
 
-// ── SessionCard ────────────────────────────────────────────────
 function SessionCard({
   section,
   onEdit,
@@ -878,7 +883,6 @@ function SessionCard({
   );
 }
 
-// ── Main Component ──────────────────────────────────────────────
 export default function Session() {
   const [sections, setSections] = useState<Section[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -896,18 +900,12 @@ export default function Session() {
       const res = await fetch(`${BACKEND_URL}/api/admin-section`);
       const data = await res.json();
       const list = data.sections || data.data || data || [];
-      const full = await Promise.all(
-        list.map(async (s: Section) => {
-          try {
-            const r = await fetch(`${BACKEND_URL}/api/admin-section/${s.id}`);
-            const d = await r.json();
-            return { ...s, bookings: (d.section || d).bookings || [] };
-          } catch {
-            return { ...s, bookings: [] };
-          }
-        }),
+      setSections(
+        list.map((s: Section) => ({
+          ...s,
+          bookings: s.bookings || [],
+        })),
       );
-      setSections(full);
     } catch {
       setSections([]);
     } finally {
@@ -926,8 +924,7 @@ export default function Session() {
   };
 
   useEffect(() => {
-    fetchSections();
-    fetchTeachers();
+    Promise.all([fetchSections(), fetchTeachers()]);
   }, []);
 
   const openSheet = (s: any) => {
@@ -946,7 +943,6 @@ export default function Session() {
 
   return (
     <div className="relative w-full min-h-full">
-      {/* Date Selector */}
       <div className="px-5 py-4">
         <button
           onClick={() => setShowCalendar(true)}
@@ -957,7 +953,6 @@ export default function Session() {
         </button>
       </div>
 
-      {/* Info Card */}
       <div className="mx-5 mb-5 bg-[#E0F8FF] rounded-2xl px-4 py-3 flex items-start gap-2 border border-[#A8E6FA]">
         <Info className="h-4 w-4 text-[#006688] shrink-0 mt-0.5" />
         <p className="text-[10px] text-[#006688] font-medium leading-relaxed">
@@ -966,7 +961,6 @@ export default function Session() {
         </p>
       </div>
 
-      {/* Title & Add Button */}
       <div className="px-5 flex items-center justify-between mb-5">
         <div>
           <h2 className="font-extrabold text-2xl text-gray-900 leading-tight">
@@ -984,7 +978,6 @@ export default function Session() {
         </button>
       </div>
 
-      {/* Sessions List */}
       <div className="px-5 flex flex-col gap-3">
         {loading ? (
           <div className="py-20 flex justify-center">
@@ -1001,7 +994,6 @@ export default function Session() {
         )}
       </div>
 
-      {/* Calendar Modal */}
       {showCalendar && (
         <CalendarPicker
           selectedDate={selectedDate}
@@ -1011,7 +1003,6 @@ export default function Session() {
         />
       )}
 
-      {/* Bottom Sheet */}
       {sheet && (
         <>
           <div

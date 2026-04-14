@@ -1,11 +1,10 @@
 // "use client";
 
-// import { useState, useEffect } from "react";
+// import { useState, useEffect, useRef } from "react";
 // import { useParams, useRouter } from "next/navigation";
 // import { useAuth } from "@clerk/nextjs";
 // import {
 //   ArrowLeft,
-//   Camera,
 //   User,
 //   ChevronDown,
 //   Pencil,
@@ -14,6 +13,7 @@
 //   ChevronRight,
 //   X,
 //   UserRound,
+//   Loader2,
 // } from "lucide-react";
 
 // const BACKEND_URL = "https://tokalot.vercel.app";
@@ -176,7 +176,7 @@
 //       fw = "font-bold";
 //     } else if (inRange) {
 //       bg = "bg-[#D7F4FD]";
-//       text = "text-[#0088B3]";
+//       text = "#0088B3";
 //       rounded = "rounded-none";
 //     }
 //     if (isStart && endDate) rounded = "rounded-l-full rounded-r-none";
@@ -186,100 +186,70 @@
 //   };
 
 //   return (
-//     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30">
-//       <div className="w-full max-w-sm bg-white rounded-t-3xl shadow-2xl pb-8">
-//         <div className="flex items-center justify-between px-5 pt-5 pb-3">
+//     <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 backdrop-blur-sm">
+//       <div className="w-full max-w-[430px] bg-white rounded-t-[40px] shadow-2xl pb-10 animate-slide-up">
+//         <div className="flex items-center justify-between px-6 pt-6 pb-4">
 //           <div>
-//             <p className="text-lg font-extrabold text-gray-900">
+//             <p className="text-xl font-black text-gray-900">
 //               {MONTHS[viewMonth]} {viewYear}
 //             </p>
-//             <p className="text-xs text-gray-400 mt-0.5">
+//             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">
 //               {selecting === "start" ? "Select start date" : "Select end date"}
 //             </p>
 //           </div>
 //           <div className="flex items-center gap-2">
 //             <button
 //               onClick={prevMonth}
-//               className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100"
+//               className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-50 border border-gray-100"
 //             >
-//               <ChevronLeft className="h-4 w-4 text-gray-600" />
+//               <ChevronLeft size={18} />
 //             </button>
 //             <button
 //               onClick={nextMonth}
-//               className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100"
+//               className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-50 border border-gray-100"
 //             >
-//               <ChevronRight className="h-4 w-4 text-gray-600" />
+//               <ChevronRight size={18} />
 //             </button>
 //             <button
 //               onClick={onClose}
-//               className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 ml-1"
+//               className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-900 text-white ml-2"
 //             >
-//               <X className="h-4 w-4 text-gray-600" />
+//               <X size={18} />
 //             </button>
 //           </div>
 //         </div>
-//         <div className="grid grid-cols-7 px-3 mb-1">
+//         <div className="grid grid-cols-7 px-4 mb-2">
 //           {DAYS.map((d, i) => (
 //             <div
 //               key={i}
-//               className="text-center text-[11px] font-bold text-gray-400 py-1"
+//               className="text-center text-[10px] font-black text-gray-300 py-2"
 //             >
 //               {d}
 //             </div>
 //           ))}
 //         </div>
-//         <div className="grid grid-cols-7 px-3 gap-y-1">
-//           {cells.map((day, i) => {
-//             if (!day) return <div key={i} />;
-//             return (
+//         <div className="grid grid-cols-7 px-4 gap-y-1">
+//           {cells.map((day, i) =>
+//             day ? (
 //               <button
 //                 key={i}
 //                 onClick={() => handleDayClick(day)}
 //                 onMouseEnter={() => setHovered(day)}
 //                 onMouseLeave={() => setHovered(null)}
-//                 className={`h-9 w-full flex items-center justify-center text-sm transition-colors ${getDayStyle(day)}`}
+//                 className={`h-10 w-full flex items-center justify-center text-sm transition-all ${getDayStyle(day)}`}
 //               >
 //                 {day.getDate()}
 //               </button>
-//             );
-//           })}
-//         </div>
-//         <div className="mx-5 mt-4 p-3 bg-gray-50 rounded-xl flex items-center justify-between">
-//           <div className="text-center flex-1">
-//             <p className="text-[10px] text-gray-400 font-semibold uppercase">
-//               Start
-//             </p>
-//             <p className="text-sm font-bold text-gray-900 mt-0.5">
-//               {startDate
-//                 ? startDate.toLocaleDateString("en-US", {
-//                     month: "short",
-//                     day: "numeric",
-//                     year: "numeric",
-//                   })
-//                 : "—"}
-//             </p>
-//           </div>
-//           <div className="w-px h-8 bg-gray-200" />
-//           <div className="text-center flex-1">
-//             <p className="text-[10px] text-gray-400 font-semibold uppercase">
-//               End
-//             </p>
-//             <p className="text-sm font-bold text-gray-900 mt-0.5">
-//               {endDate
-//                 ? endDate.toLocaleDateString("en-US", {
-//                     month: "short",
-//                     day: "numeric",
-//                     year: "numeric",
-//                   })
-//                 : "—"}
-//             </p>
-//           </div>
+//             ) : (
+//               <div key={i} />
+//             ),
+//           )}
 //         </div>
 //         {startDate && endDate && (
-//           <div className="px-5 mt-4">
+//           <div className="px-6 mt-6">
 //             <button
 //               onClick={onClose}
-//               className="w-full py-3.5 bg-gray-900 text-white font-bold rounded-2xl text-sm"
+//               className="w-full h-[60px] bg-black text-white font-black uppercase tracking-[2px] rounded-2xl shadow-xl active:scale-95 transition"
 //             >
 //               Confirm Period
 //             </button>
@@ -312,8 +282,6 @@
 //   const [membershipStart, setMembershipStart] = useState<Date | null>(null);
 //   const [membershipEnd, setMembershipEnd] = useState<Date | null>(null);
 //   const [showCalendar, setShowCalendar] = useState(false);
-
-//   // ── NEW: tracks whether membership was fully deleted in this session ──
 //   const [membershipDeleted, setMembershipDeleted] = useState(false);
 
 //   useEffect(() => {
@@ -324,11 +292,9 @@
 //     try {
 //       setLoading(true);
 //       setError(null);
-
 //       const usersRes = await fetch(`${BACKEND_URL}/api/admin/get-user`, {
 //         headers: { "x-admin-id": userId ?? "" },
 //       });
-//       if (!usersRes.ok) throw new Error(`get-user: ${usersRes.status}`);
 //       const usersData = await usersRes.json();
 //       const users = Array.isArray(usersData)
 //         ? usersData
@@ -344,7 +310,6 @@
 //       const memRes = await fetch(`${BACKEND_URL}/api/admin/membership`, {
 //         headers: { "x-user-id": clerkId, "x-admin-id": userId ?? "" },
 //       });
-
 //       let memData: MembershipData | null = null;
 //       if (memRes.ok) memData = await memRes.json();
 
@@ -354,23 +319,15 @@
 //       setSessionTotal(memData?.totalSessions ?? 0);
 
 //       if (memData?.startDate) {
-//         const parts = memData.startDate.split("T")[0].split("-");
+//         const p = memData.startDate.split("T")[0].split("-");
 //         setMembershipStart(
-//           new Date(
-//             parseInt(parts[0]),
-//             parseInt(parts[1]) - 1,
-//             parseInt(parts[2]),
-//           ),
+//           new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2])),
 //         );
 //       }
 //       if (memData?.endDate) {
-//         const parts = memData.endDate.split("T")[0].split("-");
+//         const p = memData.endDate.split("T")[0].split("-");
 //         setMembershipEnd(
-//           new Date(
-//             parseInt(parts[0]),
-//             parseInt(parts[1]) - 1,
-//             parseInt(parts[2]),
-//           ),
+//           new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2])),
 //         );
 //       }
 //     } catch (err: any) {
@@ -384,8 +341,6 @@
 //     try {
 //       setSaving(true);
 //       const parts = fullName.trim().split(" ");
-
-//       // Always save the user profile
 //       await fetch(`${BACKEND_URL}/api/admin/patch-user`, {
 //         method: "PATCH",
 //         headers: { "Content-Type": "application/json" },
@@ -397,7 +352,6 @@
 //         }),
 //       });
 
-//       // Only PATCH membership if it was NOT deleted in this session
 //       if (!membershipDeleted) {
 //         await fetch(`${BACKEND_URL}/api/admin/membership`, {
 //           method: "PATCH",
@@ -412,7 +366,6 @@
 //           }),
 //         });
 //       }
-
 //       router.back();
 //     } catch (err) {
 //       console.error(err);
@@ -422,7 +375,7 @@
 //   };
 
 //   const handleDelete = async () => {
-//     if (!confirm("Are you sure you want to delete this profile?")) return;
+//     if (!confirm("Are you sure?")) return;
 //     try {
 //       await fetch(`${BACKEND_URL}/api/admin/delete-user`, {
 //         method: "DELETE",
@@ -437,31 +390,23 @@
 
 //   const handleDeleteMembership = async () => {
 //     setShowStatusDropdown(false);
-//     if (!confirm("Энэ хэрэглэгчийн membership-г устгах уу?")) return;
+//     if (!confirm("Устгах уу?")) return;
 //     try {
 //       const res = await fetch(`${BACKEND_URL}/api/admin/membership`, {
 //         method: "DELETE",
-//         headers: {
-//           "Content-Type": "application/json",
-//           "x-user-id": clerkId,
-//         },
+//         headers: { "Content-Type": "application/json", "x-user-id": clerkId },
 //         body: JSON.stringify({ clerkId }),
 //       });
-//       if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
-
-//       // Reset all membership UI state
+//       if (!res.ok) throw new Error("Failed");
 //       setMembership(null);
 //       setMembershipStatus("PENDING");
 //       setSessionUsed(0);
 //       setSessionTotal(0);
 //       setMembershipStart(null);
 //       setMembershipEnd(null);
-
-//       // ── Mark as deleted so handleSave won't re-create it ──
 //       setMembershipDeleted(true);
 //     } catch (err) {
-//       console.error(err);
-//       alert("Membership устгахад алдаа гарлаа");
+//       alert("Алдаа гарлаа");
 //     }
 //   };
 
@@ -477,269 +422,195 @@
 //         day: "2-digit",
 //         year: "numeric",
 //       });
-//     if (membershipStart && membershipEnd)
-//       return `${fmt(membershipStart)} – ${fmt(membershipEnd)}`;
-//     if (membershipStart) return `From ${fmt(membershipStart)}`;
-//     return "—";
+//     return membershipStart && membershipEnd
+//       ? `${fmt(membershipStart)} – ${fmt(membershipEnd)}`
+//       : membershipStart
+//         ? `From ${fmt(membershipStart)}`
+//         : "—";
 //   };
 
-//   if (loading) {
+//   if (loading)
 //     return (
-//       <div className="h-screen flex items-center justify-center bg-white">
-//         <div className="w-8 h-8 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin" />
+//       <div className="min-h-screen w-full bg-[#F1F5F9] flex items-center justify-center">
+//         <Loader2 className="animate-spin text-[#20BEF9]" size={32} />
 //       </div>
 //     );
-//   }
-
-//   if (error || !user) {
-//     return (
-//       <div className="h-screen flex flex-col items-center justify-center bg-white gap-4">
-//         <p className="text-red-500 text-sm">{error ?? "User not found"}</p>
-//         <button
-//           onClick={() => router.back()}
-//           className="px-4 py-2 bg-gray-900 text-white rounded-xl text-sm"
-//         >
-//           Go back
-//         </button>
-//       </div>
-//     );
-//   }
 
 //   return (
-//     <>
+//     <div className="min-h-screen w-full bg-[#F1F5F9] md:flex md:items-center md:justify-center">
 //       <style>{`
 //         @keyframes slide-up { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-//         .animate-slide-up { animation: slide-up 0.3s cubic-bezier(0.32, 0.72, 0, 1); }
+//         .animate-slide-up { animation: slide-up 0.4s cubic-bezier(0.32, 0.72, 0, 1); }
+//         .scrollbar-hide::-webkit-scrollbar { display: none; }
 //       `}</style>
 
-//       <div className="min-h-screen bg-white flex flex-col">
-//         {/* Header */}
-//         <div className="flex items-center justify-between px-5 py-4 bg-gray-900 sticky top-0 z-40">
+//       <div
+//         className="relative w-full h-screen bg-white shadow-2xl overflow-hidden flex flex-col
+//                       md:max-w-[430px] md:h-[90vh] md:rounded-[45px] md:border-white"
+//       >
+//         {/* Sticky Header */}
+//         <div className="w-full h-[60px] bg-black text-white flex items-center justify-between px-5 shrink-0 z-40">
 //           <button
 //             onClick={() => router.back()}
-//             className="flex items-center gap-1.5 text-white text-sm font-medium"
+//             className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#20BEF9]"
 //           >
-//             <ArrowLeft className="h-4 w-4" /> Back
+//             <ArrowLeft size={16} /> Back
 //           </button>
-//           <p className="text-white text-sm font-bold">Edit Student Profile</p>
+//           <p className="text-sm font-black tracking-tight">Edit Student</p>
 //           <button
 //             onClick={handleSave}
 //             disabled={saving}
-//             className="text-[#20BEF9] text-sm font-bold disabled:opacity-50"
+//             className="text-xs font-black uppercase tracking-widest text-[#20BEF9] disabled:opacity-30"
 //           >
-//             {saving ? "Saving..." : "Save"}
+//             {saving ? "..." : "Save"}
 //           </button>
 //         </div>
 
-//         <div className="flex-1 overflow-y-auto pb-32">
-//           {/* Avatar */}
-//           <div className="flex flex-col items-center pt-8 pb-6">
+//         {/* Scrollable Content */}
+//         <div className="flex-1 overflow-y-auto pb-[120px] scrollbar-hide bg-[#F8FDFF]">
+//           {/* Avatar Section */}
+//           <div className="flex flex-col items-center pt-10 pb-6">
 //             <div className="relative">
-//               <div className="bg-gray-300 rounded-full h-[90px] w-[90px] flex items-center justify-center">
-//                 <UserRound className="h-[60px] w-[60px]" />
+//               <div className="bg-gray-100 rounded-[40px] h-[100px] w-[100px] flex items-center justify-center border-4 border-white shadow-sm">
+//                 <UserRound className="h-[60px] w-[60px] text-gray-300" />
 //               </div>
 //             </div>
-
 //             {membershipStatus === "EXPIRED" && (
-//               <div className="mt-2 px-3 py-1 bg-red-50 border border-red-200 rounded-full">
-//                 <span className="text-xs font-bold text-red-500">
-//                   ❌ MEMBERSHIP EXPIRED
+//               <div className="mt-4 px-4 py-1.5 bg-red-50 border border-red-100 rounded-full">
+//                 <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">
+//                   Membership Expired
 //                 </span>
 //               </div>
 //             )}
 //           </div>
 
-//           <div className="px-5 space-y-4">
+//           <div className="px-6 space-y-6">
 //             {/* Full Name */}
-//             <div>
-//               <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5 block">
+//             <div className="space-y-2">
+//               <label className="text-[10px] font-black text-gray-400 uppercase tracking-[2px] ml-1">
 //                 Full Name
 //               </label>
-//               <div className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
-//                 <User className="h-4 w-4 text-gray-400 flex-shrink-0" />
+//               <div className="flex items-center gap-3 bg-[#EFEFEF] rounded-2xl px-5 h-[60px]">
+//                 <User size={18} className="text-gray-400" />
 //                 <input
 //                   value={fullName}
 //                   onChange={(e) => setFullName(e.target.value)}
-//                   className="flex-1 bg-transparent text-sm text-gray-900 outline-none"
-//                   placeholder="Full name"
+//                   className="flex-1 bg-transparent font-bold text-gray-800 outline-none"
+//                   placeholder="Name"
 //                 />
 //               </div>
 //             </div>
 
 //             {/* Membership Status */}
-//             <div>
-//               <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5 block">
-//                 Membership Status
+//             <div className="space-y-2">
+//               <label className="text-[10px] font-black text-gray-400 uppercase tracking-[2px] ml-1">
+//                 Status
 //               </label>
 //               <div className="relative">
 //                 <button
-//                   onClick={() => setShowStatusDropdown((p) => !p)}
-//                   className="w-full flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 border border-gray-200"
+//                   onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+//                   className="w-full flex items-center justify-between bg-[#EFEFEF] rounded-2xl px-5 h-[60px]"
 //                 >
 //                   <div className="flex items-center gap-2">
-//                     <span className="text-base">{statusCfg.icon}</span>
-//                     <span
-//                       className={`text-sm font-semibold ${statusCfg.color}`}
-//                     >
+//                     <span className="text-lg">{statusCfg.icon}</span>
+//                     <span className={`font-black ${statusCfg.color}`}>
 //                       {statusCfg.label}
 //                     </span>
 //                   </div>
 //                   <ChevronDown
-//                     className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${showStatusDropdown ? "rotate-180" : ""}`}
+//                     className={`text-gray-400 transition ${showStatusDropdown ? "rotate-180" : ""}`}
 //                   />
 //                 </button>
-
 //                 {showStatusDropdown && (
-//                   <>
-//                     <div
-//                       className="fixed inset-0 z-40"
-//                       onClick={() => setShowStatusDropdown(false)}
-//                     />
-//                     <div className="absolute z-50 top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
-//                       {/* Status options */}
-//                       {(Object.keys(STATUS_CONFIG) as MembershipStatus[]).map(
-//                         (s) => (
-//                           <button
-//                             key={s}
-//                             onClick={() => {
-//                               setMembershipStatus(s);
-//                               setShowStatusDropdown(false);
-//                             }}
-//                             className={`w-full px-5 py-3.5 flex items-center gap-3 text-sm font-semibold border-b border-gray-50 hover:bg-gray-50 transition-colors ${
-//                               membershipStatus === s ? "bg-blue-50" : ""
-//                             }`}
-//                           >
-//                             <span className="text-base">
-//                               {STATUS_CONFIG[s].icon}
-//                             </span>
-//                             <span className={STATUS_CONFIG[s].color}>
-//                               {STATUS_CONFIG[s].label}
-//                             </span>
-//                             {membershipStatus === s && (
-//                               <span className="ml-auto text-[#20BEF9] text-xs font-bold">
-//                                 ✓
-//                               </span>
-//                             )}
-//                           </button>
-//                         ),
-//                       )}
-
-//                       {/* Divider */}
-//                       <div className="h-px bg-gray-100 mx-4" />
-
-//                       {/* Delete Membership */}
-//                       <button
-//                         onClick={handleDeleteMembership}
-//                         className="w-full px-5 py-3.5 flex items-center gap-3 text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors"
-//                       >
-//                         <Trash2 className="h-4 w-4" />
-//                         <span>Delete Membership</span>
-//                       </button>
-//                     </div>
-//                   </>
+//                   <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-slide-up">
+//                     {(Object.keys(STATUS_CONFIG) as MembershipStatus[]).map(
+//                       (s) => (
+//                         <button
+//                           key={s}
+//                           onClick={() => {
+//                             setMembershipStatus(s);
+//                             setShowStatusDropdown(false);
+//                           }}
+//                           className="w-full px-6 py-4 flex items-center gap-3 font-black text-sm border-b border-gray-50 last:border-0 hover:bg-gray-50"
+//                         >
+//                           <span>{STATUS_CONFIG[s].icon}</span>
+//                           <span className={STATUS_CONFIG[s].color}>
+//                             {STATUS_CONFIG[s].label}
+//                           </span>
+//                         </button>
+//                       ),
+//                     )}
+//                     <button
+//                       onClick={handleDeleteMembership}
+//                       className="w-full px-6 py-4 flex items-center gap-3 font-black text-sm text-red-500 bg-red-50/50"
+//                     >
+//                       <Trash2 size={16} /> Delete Membership
+//                     </button>
+//                   </div>
 //                 )}
 //               </div>
 //             </div>
 
 //             {/* Membership Period */}
-//             <div>
-//               <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5 block">
-//                 Membership Period
+//             <div className="space-y-2">
+//               <label className="text-[10px] font-black text-gray-400 uppercase tracking-[2px] ml-1">
+//                 Period
 //               </label>
 //               <button
 //                 onClick={() => setShowCalendar(true)}
-//                 className="w-full flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3 border border-gray-200 text-left"
+//                 className="w-full flex items-center gap-4 bg-[#EFEFEF] rounded-2xl px-5 h-[70px] text-left"
 //               >
-//                 <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-//                   <span className="text-sm">📅</span>
+//                 <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm">
+//                   📅
 //                 </div>
 //                 <div className="flex-1 min-w-0">
-//                   <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">
-//                     Period
-//                   </p>
 //                   <p
-//                     className={`text-sm font-semibold mt-0.5 truncate ${membershipStart ? "text-gray-800" : "text-gray-400"}`}
+//                     className={`font-black text-sm truncate ${membershipStart ? "text-gray-800" : "text-gray-400"}`}
 //                   >
 //                     {formatPeriod()}
 //                   </p>
 //                 </div>
-//                 <Pencil className="h-4 w-4 text-gray-400 flex-shrink-0" />
+//                 <Pencil size={14} className="text-gray-400" />
 //               </button>
-//               {membershipStart && membershipEnd && (
-//                 <div className="mt-2 px-2 flex items-center gap-2">
-//                   <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-//                     {(() => {
-//                       const now = new Date();
-//                       now.setHours(0, 0, 0, 0);
-//                       const s = new Date(membershipStart);
-//                       s.setHours(0, 0, 0, 0);
-//                       const e = new Date(membershipEnd);
-//                       e.setHours(0, 0, 0, 0);
-//                       const total = e.getTime() - s.getTime();
-//                       const elapsed = Math.min(
-//                         Math.max(now.getTime() - s.getTime(), 0),
-//                         total,
-//                       );
-//                       const pct = total > 0 ? (elapsed / total) * 100 : 0;
-//                       return (
-//                         <div
-//                           className="h-full bg-[#20BEF9] rounded-full transition-all duration-500"
-//                           style={{ width: `${pct}%` }}
-//                         />
-//                       );
-//                     })()}
-//                   </div>
-//                   <span className="text-[10px] text-gray-400 font-semibold whitespace-nowrap">
-//                     {Math.ceil(
-//                       (membershipEnd.getTime() - membershipStart.getTime()) /
-//                         (1000 * 60 * 60 * 24),
-//                     ) + 1}{" "}
-//                     days
-//                   </span>
-//                 </div>
-//               )}
 //             </div>
 
 //             {/* Session Credits */}
-//             <div className="bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
-//               <div className="flex items-center justify-between mb-2">
+//             <div className="bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm space-y-4">
+//               <div className="flex items-center justify-between">
 //                 <div className="flex items-center gap-3">
-//                   <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-//                     <span className="text-sm">🎫</span>
+//                   <div className="w-10 h-10 rounded-xl bg-[#E0F8FF] flex items-center justify-center text-lg">
+//                     🎫
 //                   </div>
 //                   <div>
-//                     <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">
-//                       Session Credits
+//                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+//                       Credits
 //                     </p>
 //                     {editingSessions ? (
-//                       <div className="flex items-center gap-1 mt-0.5">
+//                       <div className="flex items-center gap-1 font-black text-sm">
 //                         <input
 //                           type="number"
 //                           value={sessionUsed}
 //                           onChange={(e) =>
 //                             setSessionUsed(Number(e.target.value))
 //                           }
-//                           className="w-12 text-sm font-bold text-gray-900 bg-white border border-gray-200 rounded-lg px-2 py-0.5 outline-none"
+//                           className="w-12 bg-gray-50 border rounded px-1"
 //                         />
-//                         <span className="text-sm text-gray-400 font-semibold">
-//                           {" "}
-//                           /{" "}
-//                         </span>
+//                         <span>/</span>
 //                         <input
 //                           type="number"
 //                           value={sessionTotal}
 //                           onChange={(e) =>
 //                             setSessionTotal(Number(e.target.value))
 //                           }
-//                           className="w-12 text-sm font-bold text-gray-900 bg-white border border-gray-200 rounded-lg px-2 py-0.5 outline-none"
+//                           className="w-12 bg-gray-50 border rounded px-1"
 //                         />
 //                       </div>
 //                     ) : (
-//                       <p className="text-sm font-bold text-gray-900 mt-0.5">
+//                       <p className="font-black text-gray-800">
 //                         {sessionUsed} used /{" "}
 //                         <span
 //                           className={
-//                             remaining === 0 ? "text-red-500" : "text-green-600"
+//                             remaining === 0 ? "text-red-500" : "text-[#20BEF9]"
 //                           }
 //                         >
 //                           {remaining} left
@@ -748,54 +619,45 @@
 //                     )}
 //                   </div>
 //                 </div>
-//                 <button onClick={() => setEditingSessions((p) => !p)}>
-//                   <Pencil className="h-4 w-4 text-gray-400" />
+//                 <button
+//                   onClick={() => setEditingSessions(!editingSessions)}
+//                   className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center"
+//                 >
+//                   <Pencil size={14} className="text-gray-400" />
 //                 </button>
 //               </div>
-//               <div className="w-full bg-gray-200 rounded-full h-1.5">
+//               <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
 //                 <div
-//                   className={`h-1.5 rounded-full transition-all duration-300 ${sessionPct >= 100 ? "bg-red-400" : "bg-[#20BEF9]"}`}
+//                   className={`h-full rounded-full transition-all duration-500 ${sessionPct >= 100 ? "bg-red-400" : "bg-[#20BEF9]"}`}
 //                   style={{ width: `${Math.min(sessionPct, 100)}%` }}
 //                 />
 //               </div>
-//               <div className="flex justify-between text-[10px] text-gray-400 mt-1 font-medium">
-//                 <span>USED: {sessionUsed}</span>
-//                 <span>TOTAL: {sessionTotal}</span>
-//               </div>
 //             </div>
 
-//             {/* Session History */}
+//             {/* History */}
 //             {membership?.history && membership.history.length > 0 && (
-//               <div>
-//                 <h3 className="text-sm font-extrabold text-gray-900 mb-3">
+//               <div className="space-y-3">
+//                 <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[2px] ml-1">
 //                   Session History
 //                 </h3>
 //                 <div className="space-y-2">
 //                   {membership.history.map((h) => (
 //                     <div
 //                       key={h.id}
-//                       className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 border border-gray-100"
+//                       className="flex items-center justify-between bg-white rounded-2xl p-4 border border-gray-50 shadow-sm"
 //                     >
 //                       <div>
-//                         <p className="text-sm font-semibold text-gray-900">
+//                         <p className="text-xs font-black text-gray-800">
 //                           {h.action}
 //                         </p>
-//                         <p className="text-xs text-gray-400 mt-0.5">
-//                           {new Date(h.createdAt).toLocaleDateString("en-US", {
-//                             month: "short",
-//                             day: "numeric",
-//                             year: "numeric",
-//                           })}
+//                         <p className="text-[9px] font-bold text-gray-400 uppercase mt-0.5">
+//                           {new Date(h.createdAt).toLocaleDateString()}
 //                         </p>
 //                       </div>
 //                       <span
-//                         className={`text-sm font-bold ${h.change < 0 ? "text-red-400" : h.change > 0 ? "text-green-500" : "text-gray-400"}`}
+//                         className={`text-sm font-black ${h.change < 0 ? "text-red-400" : "text-green-500"}`}
 //                       >
-//                         {h.change < 0
-//                           ? h.change
-//                           : h.change > 0
-//                             ? `+${h.change}`
-//                             : "—"}
+//                         {h.change > 0 ? `+${h.change}` : h.change}
 //                       </span>
 //                     </div>
 //                   ))}
@@ -803,23 +665,22 @@
 //               </div>
 //             )}
 
-//             {/* Delete Profile */}
 //             <button
 //               onClick={handleDelete}
-//               className="w-full flex items-center justify-center gap-2 text-red-500 text-sm font-semibold py-3"
+//               className="w-full flex items-center justify-center gap-2 text-red-400 text-[10px] font-black uppercase tracking-widest py-8 active:opacity-50 transition"
 //             >
-//               <Trash2 className="h-4 w-4" /> Delete Profile
+//               <Trash2 size={14} /> Delete Entire Profile
 //             </button>
 //           </div>
 //         </div>
 
-//         {/* Bottom Cancel */}
-//         <div className="fixed bottom-0 left-0 right-0 px-5 pb-8 pt-3 bg-white border-t border-gray-100">
+//         {/* Fixed Cancel Button at Bottom */}
+//         <div className="absolute bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-gray-50">
 //           <button
 //             onClick={() => router.back()}
-//             className="w-full py-4 rounded-2xl border border-gray-200 text-sm font-semibold text-gray-600"
+//             className="w-full h-[60px] rounded-2xl border-2 border-gray-100 font-black uppercase tracking-[2px] text-xs text-gray-400 active:bg-gray-50 transition"
 //           >
-//             Cancel
+//             Cancel Changes
 //           </button>
 //         </div>
 //       </div>
@@ -835,7 +696,7 @@
 //           onClose={() => setShowCalendar(false)}
 //         />
 //       )}
-//     </>
+//     </div>
 //   );
 // }
 
@@ -1133,14 +994,23 @@ export default function EditUserPage() {
     try {
       setLoading(true);
       setError(null);
-      const usersRes = await fetch(`${BACKEND_URL}/api/admin/get-user`, {
-        headers: { "x-admin-id": userId ?? "" },
-      });
+
+      // ✅ Хоёр request зэрэг явна
+      const [usersRes, memRes] = await Promise.all([
+        fetch(`${BACKEND_URL}/api/admin/get-user`, {
+          headers: { "x-admin-id": userId ?? "" },
+        }),
+        fetch(`${BACKEND_URL}/api/admin/membership`, {
+          headers: { "x-user-id": clerkId, "x-admin-id": userId ?? "" },
+        }),
+      ]);
+
       const usersData = await usersRes.json();
       const users = Array.isArray(usersData)
         ? usersData
         : (usersData?.users ?? []);
       const found = users.find((u: any) => u.clerkId === clerkId);
+
       if (!found) {
         setError("User not found");
         return;
@@ -1148,9 +1018,6 @@ export default function EditUserPage() {
       setUser(found);
       setFullName(found.fullName ?? "");
 
-      const memRes = await fetch(`${BACKEND_URL}/api/admin/membership`, {
-        headers: { "x-user-id": clerkId, "x-admin-id": userId ?? "" },
-      });
       let memData: MembershipData | null = null;
       if (memRes.ok) memData = await memRes.json();
 
@@ -1285,10 +1152,7 @@ export default function EditUserPage() {
         .scrollbar-hide::-webkit-scrollbar { display: none; }
       `}</style>
 
-      <div
-        className="relative w-full h-screen bg-white shadow-2xl overflow-hidden flex flex-col
-                      md:max-w-[430px] md:h-[90vh] md:rounded-[45px] md:border-white"
-      >
+      <div className="relative w-full h-screen bg-white shadow-2xl overflow-hidden flex flex-col md:max-w-[430px] md:h-[90vh] md:rounded-[45px] md:border-white">
         {/* Sticky Header */}
         <div className="w-full h-[60px] bg-black text-white flex items-center justify-between px-5 shrink-0 z-40">
           <button
