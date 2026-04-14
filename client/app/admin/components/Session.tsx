@@ -46,7 +46,7 @@ interface Section {
   bookings?: Booking[];
 }
 
-const BACKEND_URL = "https://tokalot.vercel.app";
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL;
 
 function formatTime(iso: string) {
   try {
