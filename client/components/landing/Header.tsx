@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs";
+import Image from "next/image";
 
 export const Header = () => {
   const router = useRouter();
@@ -28,16 +29,22 @@ export const Header = () => {
   };
 
   return (
-    <header className="w-full bg-[#051F25]/80 backdrop-blur-md border-b border-white/5 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
-        <p
+    <header className="w-full h-[90px] bg-[#051F25]/80 backdrop-blur-md border-b border-white/5 sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto flex items-center justify-between max-md:px-4">
+        <div
           onClick={() => router.push("/")}
-          className="font-bold text-2xl text-sky-400 cursor-pointer"
+          className="cursor-pointer flex items-center"
         >
-          Tokalot
-        </p>
+          <Image
+            src="/tokalotlogo.png"
+            alt="Tokalot"
+            width={100}
+            height={100}
+            className="object-contain"
+            priority
+          />
+        </div>
 
-        {/* Desktop Navigation */}
         <nav className="hidden md:flex gap-8 text-sm text-slate-400 font-medium">
           <button
             onClick={() => router.push("/")}
@@ -101,7 +108,6 @@ export const Header = () => {
         </button>
       </div>
 
-      {/* Mobile Navigation */}
       {open && (
         <div className="md:hidden px-6 pb-6 flex flex-col gap-5 text-slate-300 font-medium bg-[#051F25]">
           <button
