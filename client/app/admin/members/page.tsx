@@ -1,142 +1,3 @@
-// "use client";
-
-// import React, { useState, useEffect } from "react";
-// import { useAuth } from "@clerk/nextjs";
-// import Header from "../components/Header";
-// import Footer from "../components/Footer";
-// import { Search, UserPlus } from "lucide-react";
-// import UserCard from "../members/components/UserCard";
-
-// const BACKEND_URL = "https://tokalot.vercel.app";
-
-// interface UserType {
-//   clerkId: string;
-//   fullName: string;
-//   email?: string;
-//   image?: string;
-//   isMember: boolean;
-//   membershipStatus?: string;
-//   membershipEnd?: string;
-//   remainingSessions?: number;
-//   isExpired?: boolean;
-//   createdAt?: string;
-// }
-
-// const User = () => {
-//   const { userId } = useAuth();
-//   const [search, setSearch] = useState("");
-//   const [users, setUsers] = useState<UserType[]>([]);
-//   const [loading, setLoading] = useState(false);
-//   const [error, setError] = useState<string | null>(null);
-
-//   const fetchUsers = async () => {
-//     try {
-//       setLoading(true);
-//       setError(null);
-//       const res = await fetch(`${BACKEND_URL}/api/admin/get-user`, {
-//         method: "GET",
-//         headers: {
-//           "Content-Type": "application/json",
-//           "x-admin-id": userId ?? "",
-//         },
-//       });
-//       if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
-//       const data = await res.json();
-//       const list = Array.isArray(data) ? data : (data?.users ?? []);
-//       setUsers(
-//         list.map((u: any) => ({
-//           ...u,
-//           isMember: u.membershipStatus === "ACTIVE",
-//         })),
-//       );
-//     } catch (err: any) {
-//       setError(err.message ?? "Unknown error");
-//       setUsers([]);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   useEffect(() => {
-//     if (userId) fetchUsers();
-//   }, [userId]);
-
-//   const handleDelete = async (clerkId: string) => {
-//     if (!confirm("Are you sure you want to delete this user?")) return;
-//     try {
-//       await fetch(`${BACKEND_URL}/api/admin/delete-user`, {
-//         method: "DELETE",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify({ targetClerkId: clerkId, adminClerkId: userId }),
-//       });
-//       fetchUsers();
-//     } catch (err) {
-//       console.error(err);
-//     }
-//   };
-
-//   const filtered = users.filter((u) =>
-//     u.fullName?.toLowerCase().includes(search.toLowerCase()),
-//   );
-
-//   return (
-//     <div className="h-screen w-screen flex flex-col bg-white">
-//       <Header />
-//       <div className="flex-1 overflow-y-auto px-5 pt-5 pb-28">
-//         <div className="relative mb-6">
-//           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-//           <input
-//             type="text"
-//             placeholder="Search students..."
-//             value={search}
-//             onChange={(e) => setSearch(e.target.value)}
-//             className="w-full bg-[#EFEFEF] rounded-2xl h-[55px] pl-11 pr-4 text-sm outline-none"
-//           />
-//         </div>
-
-//         <div className="flex items-center justify-between mb-4">
-//           <h1 className="text-2xl font-extrabold text-gray-900">
-//             Student Directory
-//           </h1>
-//           <span className="text-[#20BEF9] font-extrabold text-sm border border-[#20BEF9] rounded-lg px-3 py-1">
-//             {filtered.length} TOTAL
-//           </span>
-//         </div>
-
-//         {error && (
-//           <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4 text-sm text-red-600">
-//             ⚠️ {error}
-//           </div>
-//         )}
-
-//         <div className="flex flex-col gap-3">
-//           {loading && <p className="text-gray-400">Loading...</p>}
-//           {!loading && !error && filtered.length === 0 && (
-//             <p className="text-gray-400">No users found</p>
-//           )}
-//           {filtered.map((user) => (
-//             <UserCard
-//               key={user.clerkId}
-//               user={user}
-//               onDelete={() => handleDelete(user.clerkId)}
-//             />
-//           ))}
-//         </div>
-//       </div>
-
-//       {/* <div className="absolute bottom-24 right-5">
-//         <button className="bg-gray-900 text-white h-[64px] w-[64px] rounded-2xl flex items-center justify-center shadow-lg">
-//           <UserPlus className="h-6 w-6" />
-//         </button>
-//       </div> */}
-
-//       <Footer />
-//     </div>
-//   );
-// };
-
-// export default User;
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -219,20 +80,15 @@ const User = () => {
   );
 
   return (
-    // Desktop Wrapper
     <div className="min-h-screen w-full bg-[#F1F5F9] md:flex md:items-center md:justify-center">
-      {/* Phone Frame Container */}
       <div
         className="relative w-full h-screen bg-white shadow-2xl overflow-hidden flex flex-col
                       md:max-w-[430px] md:h-[90vh] md:rounded-[45px]  md:border-white"
       >
-        {/* Header - Ирмэгтээ бүрэн тулна */}
         <Header />
 
-        {/* Scrollable Content Area */}
         <div className="flex-1 overflow-y-auto pb-[100px] scrollbar-hide bg-[#F8FDFF]">
           <div className="p-6">
-            {/* Title & Stats */}
             <div className="flex items-center justify-between mb-6">
               <div>
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
@@ -252,7 +108,6 @@ const User = () => {
               </div>
             </div>
 
-            {/* Search Bar */}
             <div className="relative mb-8">
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
@@ -264,14 +119,12 @@ const User = () => {
               />
             </div>
 
-            {/* Error Message */}
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-6 text-xs font-bold text-red-600 flex items-center gap-2">
                 ⚠️ {error}
               </div>
             )}
 
-            {/* Students List */}
             <div className="flex flex-col gap-4">
               {loading && (
                 <div className="py-20 flex justify-center items-center">
@@ -298,7 +151,6 @@ const User = () => {
           </div>
         </div>
 
-        {/* Footer - Ирмэгтээ бүрэн тулна */}
         <Footer />
       </div>
     </div>

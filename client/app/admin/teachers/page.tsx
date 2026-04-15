@@ -110,7 +110,6 @@ export default function TeachersPage() {
               </Link>
             </div>
 
-            {/* Stats Card */}
             <div className="grid gap-4 mt-6">
               <div className="bg-[#EFEFEF] p-6 rounded-[28px] border border-gray-100">
                 <p className="text-4xl font-black text-gray-900">
@@ -122,7 +121,6 @@ export default function TeachersPage() {
               </div>
             </div>
 
-            {/* Search Input */}
             <div className="mt-6 relative">
               <Search
                 className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"
@@ -137,7 +135,6 @@ export default function TeachersPage() {
               />
             </div>
 
-            {/* Teachers List */}
             <div className="mt-8 space-y-4">
               {loading ? (
                 <div className="py-20 flex flex-col items-center justify-center gap-4">
