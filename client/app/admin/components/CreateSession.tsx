@@ -12,11 +12,11 @@ const BACKEND_URL = "https://tokalot.vercel.app";
 export default function CreateSession({
   onClose,
   onSuccess,
-  defaultDate, // ← нэмсэн
+  defaultDate,
 }: {
   onClose?: () => void;
   onSuccess?: () => void;
-  defaultDate?: string; // ← нэмсэн
+  defaultDate?: string;
 }) {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(false);
@@ -27,14 +27,13 @@ export default function CreateSession({
 
   const [form, setForm] = useState({
     title: "",
-    sessionDate: defaultDate ?? today, // ← өөрчилсөн
+    sessionDate: defaultDate ?? today,
     startTime: "",
     endTime: "",
     capacity: "15",
     teacherId: "",
   });
 
-  // optional sync (safe нэмэлт)
   useEffect(() => {
     if (defaultDate) {
       setForm((prev) => ({ ...prev, sessionDate: defaultDate }));
@@ -113,7 +112,6 @@ export default function CreateSession({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-      {/* Header */}
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-3">
           <div className="bg-[#C2E8FF] p-2 rounded-xl">

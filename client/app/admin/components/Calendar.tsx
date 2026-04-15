@@ -1,5 +1,3 @@
-
-
 "use client";
 import { useState } from "react";
 
@@ -58,7 +56,6 @@ export default function DatePicker({ selected, setSelected }: Props) {
 
   return (
     <div className="relative inline-block">
-      {/* Trigger */}
       <button
         onClick={() => setOpen(!open)}
         className="flex items-center gap-3 bg-[#E0F8FF] border-2 border-[#BCC8D1] rounded-2xl px-5 py-3 hover:shadow-md transition-all h-13"
@@ -68,10 +65,8 @@ export default function DatePicker({ selected, setSelected }: Props) {
         <ChevronIcon />
       </button>
 
-      {/* Dropdown */}
       {open && (
         <div className="absolute top-16 left-0 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 w-80 z-50">
-          {/* Month nav */}
           <div className="flex items-center justify-between mb-4">
             <button
               onClick={prevMonth}
@@ -90,7 +85,6 @@ export default function DatePicker({ selected, setSelected }: Props) {
             </button>
           </div>
 
-          {/* Day headers */}
           <div className="grid grid-cols-7 mb-2">
             {DAYS.map((d) => (
               <div
@@ -102,7 +96,6 @@ export default function DatePicker({ selected, setSelected }: Props) {
             ))}
           </div>
 
-          {/* Days */}
           <div className="grid grid-cols-7 gap-y-1">
             {Array.from({ length: firstDay }).map((_, i) => (
               <div key={i} />
