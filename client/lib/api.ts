@@ -1,5 +1,3 @@
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "https://tokalot.vercel.app";
-
 // Sessions авах (огноогоор)
 export async function fetchSessions(date: string) {
   const res = await fetch(`/api/sessions?date=${date}`);
@@ -8,7 +6,7 @@ export async function fetchSessions(date: string) {
 }
 
 // Session захиалах
-export async function bookSession(sectionId: string, _clerkId?: string) {
+export async function bookSession(sectionId: string) {
   const res = await fetch(`/api/booking`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -20,7 +18,7 @@ export async function bookSession(sectionId: string, _clerkId?: string) {
 }
 
 // Захиалга цуцлах
-export async function cancelBooking(bookingId: string, _clerkId?: string) {
+export async function cancelBooking(bookingId: string) {
   const res = await fetch(`/api/booking`, {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
@@ -32,7 +30,7 @@ export async function cancelBooking(bookingId: string, _clerkId?: string) {
 }
 
 // Миний захиалгууд
-export async function fetchMyBookings(clerkId: string, status: "upcoming" | "completed") {
+export async function fetchMyBookings(status: "upcoming" | "completed") {
   const res = await fetch(`/api/user/my-bookings?status=${status}`);
   if (!res.ok) throw new Error("Failed to fetch bookings");
   return res.json();
@@ -51,7 +49,7 @@ export async function updateUserProfile(firstName: string, lastName: string) {
 }
 
 // Membership мэдээлэл авах
-export async function fetchMembership(_clerkId?: string) {
+export async function fetchMembership() {
   const res = await fetch(`/api/membership/status`);
   if (!res.ok) throw new Error("Failed to fetch membership");
   return res.json();
