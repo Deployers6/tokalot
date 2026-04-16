@@ -9,13 +9,24 @@ export function AdminDesktopSidebar() {
 
   return (
     <aside className="hidden w-72 shrink-0 rounded-[2rem] bg-[#07171d] p-6 text-white lg:flex lg:flex-col">
-      <Link href="/" className="text-3xl font-black tracking-tight text-[#20BEF9]">
+      {/* <Link
+        href="/"
+        className="text-3xl font-black tracking-tight text-[#20BEF9]"
+      >
         Tokalot
+      </Link> */}
+      <Link
+        href="/"
+        className="text-3xl font-black tracking-tight text-[#20BEF9]"
+      >
+        <img
+          src="/tokalotlogo.png"
+          alt="Tokalot"
+          height={150}
+          width={150}
+          className="ml-10"
+        />
       </Link>
-      <p className="mt-2 text-sm text-slate-400">
-        Responsive admin workspace for sessions, teachers, and members.
-      </p>
-
       <div className="mt-10 space-y-3">
         {adminNavItems.map(({ href, icon: Icon, label }) => {
           const active = pathname === href;
