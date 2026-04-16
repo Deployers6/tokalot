@@ -28,7 +28,7 @@ export const Header = () => {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/5 bg-[#051F25]/80 backdrop-blur-md">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
         <button
           onClick={() => router.push("/")}
           className="cursor-pointer"
@@ -37,9 +37,9 @@ export const Header = () => {
           <Image
             src="/tokalotlogo.png"
             alt="Tokalot"
-            width={112}
-            height={40}
-            className="h-10 w-auto object-contain"
+            width={120}
+            height={120}
+            className="h-[120px] w-[120px] object-contain absolute top-[-15px]"
             priority
           />
         </button>
@@ -51,9 +51,21 @@ export const Header = () => {
             onMyPage={handleMyPage}
           />
         </div>
-        <button onClick={() => setOpen((value) => !value)} className="rounded-xl bg-sky-400 px-4 py-2 font-semibold text-[#004963] md:hidden">Menu</button>
+        <button
+          onClick={() => setOpen((value) => !value)}
+          className="rounded-xl bg-sky-400 px-4 py-2 font-semibold text-[#004963] md:hidden"
+        >
+          Menu
+        </button>
       </div>
-      <MobileMenu open={open} isLoaded={isLoaded} isSignedIn={isSignedIn} onNavigate={navigate} onMyPage={handleMyPage} onClose={() => setOpen(false)} />
+      <MobileMenu
+        open={open}
+        isLoaded={isLoaded}
+        isSignedIn={isSignedIn}
+        onNavigate={navigate}
+        onMyPage={handleMyPage}
+        onClose={() => setOpen(false)}
+      />
     </header>
   );
 };
