@@ -48,7 +48,7 @@ export async function GET() {
 
 export async function PATCH(req: Request) {
   try {
-    // 1. Эрх шалгах (Clerk session + Postman Header-ийг хоёуланг нь зөвшөөрнө)
+    
     const { sessionClaims } = await auth();
     const role = sessionClaims?.metadata?.role || req.headers.get("x-role");
 
@@ -59,7 +59,7 @@ export async function PATCH(req: Request) {
       );
     }
 
-    // 2. ID-г URL-аас авах
+   
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 
@@ -67,16 +67,16 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: "Багшийн ID олдсонгүй" }, { status: 400 });
     }
 
-    // 3. Body-оос мэдээллийг авах
+   
     const body = await req.json();
 
     const { fullName, bio, experience, imageUrl } = body;
 
-    // 4. Өгөгдлийг шинэчлэх
+   
     const updatedTeacher = await prisma.teacher.update({
       where: { id },
       data: {
-        // Зөвхөн ирсэн утгуудыг шинэчилнэ (undefined бол хуучин утгаараа үлдэнэ)
+        
         fullName: fullName ?? undefined,
         bio: bio ?? undefined,
         experience: experience ?? undefined,
@@ -92,7 +92,7 @@ export async function PATCH(req: Request) {
   } catch (error: any) {
     console.error("PATCH_TEACHER_ERROR:", error);
 
-    // Хэрэв ийм ID-тай багш байхгүй бол
+    
     if (error.code === 'P2025') {
       return NextResponse.json(
         { error: "Ийм ID-тай багш олдсонгүй." },
@@ -124,14 +124,11 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: "ID олдсонгүй" }, { status: 400 });
     }
 
-    // --- TRANSACTION-ИЙГ САЛГАЖ ХИЙХ (Илүү найдвартай) ---
-    
-    // 1. Эхлээд холбоотой хичээлүүдийг устгах
     await prisma.section.deleteMany({
       where: { teacherId: teacherId },
     });
 
-    // 2. Дараа нь багшийг устгах
+    
     const deletedTeacher = await prisma.teacher.delete({
       where: { id: teacherId },
     });
