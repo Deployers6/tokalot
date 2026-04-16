@@ -3,6 +3,16 @@ import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_URL = "https://tokalot.vercel.app";
 
+interface BookingSection {
+  StartTime: string;
+  endTime: string;
+}
+
+interface UserBooking {
+  status: boolean;
+  section: BookingSection;
+}
+
 export async function GET(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -13,10 +23,9 @@ export async function GET(req: NextRequest) {
   const res = await fetch(`${BACKEND_URL}/api/user/user-booking-me?userId=${userId}`);
   if (!res.ok) return NextResponse.json({ error: "Failed to fetch bookings" }, { status: 500 });
 
-  const all: any[] = await res.json();
+  const all: UserBooking[] = await res.json();
   const now = new Date();
-
-  let filtered: any[];
+  let filtered: UserBooking[];
 
   if (status === "upcoming") {
     filtered = all.filter(
