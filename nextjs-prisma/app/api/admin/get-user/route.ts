@@ -144,7 +144,7 @@ export async function GET(req: NextRequest) {
 
         return {
           clerkId: user.id,
-          fullName: user.username || "Нэргүй",
+          fullName: user.username || "NO NAME",
           email: email,
           membershipStatus: status,
           isMember: status === "ACTIVE",
