@@ -4,6 +4,8 @@ export interface SessionSlot {
   level: string;
   StartTime: string;
   endTime: string;
+  capacity: number;
+  bookings: Array<unknown>;
 }
 
 export interface DayOption {
