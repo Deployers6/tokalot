@@ -5,12 +5,12 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: NextRequest) {
-  // Header-ээс мэдээллүүдийг авна
+ 
   const clerkId = req.headers.get("x-user-id");
   const email = req.headers.get("x-user-email");
   const fullName = req.headers.get("x-user-name") || "Шинэ сурагч";
 
-  // 1. Validation: clerkId болон email заавал байх ёстой
+  
   if (!clerkId || !email) {
     return NextResponse.json(
       { error: "clerkId эсвэл email дутуу байна (Headers-ээ шалгана уу)" }, 
@@ -19,8 +19,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // 2. User байхгүй бол үүсгэх, байвал мэдээллийг нь шинэчлэх (Upsert)
-    // Энэ нь 'User not found' алдаанаас бүрэн сэргийлнэ
+    
     const user = await prisma.user.upsert({
       where: { clerkId: clerkId },
       update: {
@@ -34,7 +33,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // 3. Өмнө нь Membership хүсэлт гаргасан эсэхийг шалгах
+    
     const existingMembership = await prisma.membership.findUnique({
       where: { clerkId: clerkId },
     });
@@ -46,23 +45,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 4. TRANSACTION: Membership болон History-г зэрэг үүсгэх
-  // ... (дээрх хэсэг ижил)
-
-    // 4. Membership үүсгэх
+    
     const newMembership = await prisma.membership.create({
       data: {
         clerkId: clerkId,
         status: "PENDING",
         totalSessions: 0,
         usedSessions: 0,
-        // history: { create: { action: "REQUESTED", change: 0 } }, // УСТГАХ
+        
       },
     });
 
-// ... (үлдсэн хэсэг ижил)
 
-    // 5. Админ руу Resend-ээр имэйл мэдэгдэл илгээх
     try {
       await resend.emails.send({
         from: "Tokalot <onboarding@resend.dev>",
@@ -81,7 +75,7 @@ export async function POST(req: NextRequest) {
       });
     } catch (emailError) {
       console.error("Resend Error:", emailError);
-      // Имэйл яваагүй ч баазад дата үүссэн тул амжилттай хариу буцаана
+      
     }
 
     return NextResponse.json(newMembership);

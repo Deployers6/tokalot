@@ -10,7 +10,7 @@ export async function PATCH(
     const { id } = await params;
     const body = await req.json();
 
-    // teacherId-г body-оос авч байна
+    
     const { title, startTime, level, endTime, capacity, status, teacherId } = body;
 
     const updatedSection = await prisma.section.update({
@@ -19,15 +19,15 @@ export async function PATCH(
     ...(title && { title }),
     ...(level && { level }),
     ...(teacherId && { teacherId }),
-    // Database-ийн баганын нэр 'StartTime' (Том S) байна
+   
     ...(startTime && { StartTime: new Date(startTime) }), 
-    // Database-ийн баганын нэр 'endTime' (Жижиг e) байна
+  
     ...(endTime && { endTime: new Date(endTime) }),
     ...(capacity && { capacity: parseInt(capacity) }),
     ...(status !== undefined && { status }),
   },
   include: {
-    teacher: true, // Ингэж байж fullName харагдана
+    teacher: true, 
   }
 });
 

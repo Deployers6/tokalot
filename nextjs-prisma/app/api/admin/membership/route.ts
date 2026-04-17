@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
-  // Postman-д зориулж Header-ээс, эсвэл Clerk-ээс ID авна
+  
   const clerkId = req.headers.get("x-user-id");
 
   if (!clerkId || clerkId === "null") {
@@ -10,12 +10,12 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // Зөвхөн байгаа датаг хайж олно (Шинээр үүсгэхгүй)
+    
     const membership = await prisma.membership.findUnique({
       where: { clerkId: clerkId },
     });
 
-    // Хэрэв байхгүй бол 200 статус бүхий null буцаана (Frontend дээр "Member биш" гэж харуулна)
+    
     return NextResponse.json(membership);
   } catch (error: any) {
     console.error("GET Membership Error:", error);

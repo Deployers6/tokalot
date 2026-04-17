@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma"; // { prisma } биш, шууд prisma гэж import хийнэ
+import prisma from "@/lib/prisma"; 
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { clerkId, sectionId } = body;
 
-    // 1. Мэдээлэл дутуу эсэхийг шалгах
+   
     if (!clerkId || !sectionId) {
       return NextResponse.json(
         { error: "clerkId болон sectionId заавал шаардлагатай" },
@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 2. Гишүүнчлэлийг нь шалгах
+    
     const membership = await prisma.membership.findUnique({
       where: { clerkId }
     });
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3. Эрх нь үлдсэн эсэхийг шалгах
+   
     if (membership.usedSessions >= membership.totalSessions) {
       return NextResponse.json(
         { error: "Таны хичээлийн эрх (сесс) дууссан байна" },
@@ -41,10 +41,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 4. Transaction ашиглан Booking үүсгэж, сессийг нь хасах
+   
     const result = await prisma.$transaction(async (tx) => {
       
-      // А. Хичээл байгаа эсэхийг шалгах
+     
       const section = await tx.section.findUnique({
         where: { id: sectionId },
         include: { _count: { select: { bookings: true } } }
@@ -52,18 +52,18 @@ export async function POST(req: NextRequest) {
 
       if (!section) throw new Error("SECTION_NOT_FOUND");
       
-      // Б. Анги дүүрсэн эсэхийг шалгах
+      
       if (section._count.bookings >= section.capacity) {
         throw new Error("SECTION_FULL");
       }
 
-      // В. Өмнө нь бүртгүүлсэн эсэхийг шалгах (Давхар бүртгэлээс сэргийлэх)
+      
       const existing = await tx.booking.findFirst({
         where: { clerkId, sectionId }
       });
       if (existing) throw new Error("ALREADY_BOOKED");
 
-      // Г. Захиалга үүсгэх
+      
       const newBooking = await tx.booking.create({
         data: {
           clerkId: clerkId,
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
         }
       });
 
-      // Д. Membership-ийн usedSessions-ийг 1-ээр нэмэх
+      
       await tx.membership.update({
         where: { clerkId: clerkId },
         data: {
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error("BOOKING_ERROR_LOG:", error);
 
-    // Тодорхой алдаануудыг хэрэглэгчид ойлгомжтой буцаах
+    
     const errorMap: Record<string, string> = {
       SECTION_NOT_FOUND: "Уучлаарай, хичээл олдсонгүй.",
       SECTION_FULL: "Уучлаарай, энэ хичээлийн суудал дүүрсэн байна.",

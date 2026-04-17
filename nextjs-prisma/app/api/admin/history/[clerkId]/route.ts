@@ -8,7 +8,6 @@ export async function GET(
   try {
     const { clerkId } = await params;
 
-    // History-г орлох: EXPIRED status-тай Membership-уудыг буцаах
     const expiredMemberships = await prisma.membership.findMany({
       where: { 
         clerkId: clerkId,

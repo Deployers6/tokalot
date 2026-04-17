@@ -14,7 +14,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Transaction-ы гадна байгаа findFirst нь зөвхөн анхны шүүлтүүр болно
     const member = await prisma.membership.findUnique({
       where: { clerkId },
     });
@@ -26,11 +25,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Зэрэг ирэх хүсэлтийг шийдвэрлэх Transaction
     const result = await prisma.$transaction(
       async (tx) => {
-        // 1. SECTION-ийг "Түгжиж" унших (Select for Update-тай ижил утгатай)
-        // Энд findUnique ашиглаж байгаа тул Prisma тухайн мөрийг түр хязгаарлана
+      
         const section = await tx.section.findUnique({
           where: { id: sectionId },
           include: {
@@ -40,14 +37,12 @@ export async function POST(req: NextRequest) {
 
         if (!section) throw new Error("SECTION_NOT_FOUND");
 
-        // 2. СУУДАЛ ШАЛГАХ (Хамгийн чухал хэсэг)
-        // Хэрэв хоёр хүсэлт зэрэг орж ирвэл, эхнийх нь амжиж bookings-ийг нэмэх хүртэл
-        // дараагийн хүсэлт энд байгаа section._count.bookings-ийн шинэчлэгдсэн утгыг хүлээнэ.
+        
         if (section._count.bookings >= section.capacity) {
           throw new Error("SECTION_FULL");
         }
 
-        // 3. ДАВХАР ЗАХИАЛГА ШАЛГАХ
+        
         const existingBooking = await tx.booking.findUnique({
           where: {
             clerkId_sectionId: { clerkId, sectionId },
@@ -55,7 +50,7 @@ export async function POST(req: NextRequest) {
         });
         if (existingBooking) throw new Error("ALREADY_BOOKED");
 
-        // 4. СЕСС ҮЛДЭГДЭЛ ШАЛГАХ (Дотор нь дахин шалгах нь аюулгүй)
+        
         const currentMember = await tx.membership.findUnique({
           where: { clerkId },
         });
@@ -66,7 +61,7 @@ export async function POST(req: NextRequest) {
           throw new Error("INSUFFICIENT_SESSIONS");
         }
 
-        // 5. ҮЙЛДЛҮҮДИЙГ ГҮЙЦЭТГЭХ
+        
         const newBooking = await tx.booking.create({
           data: {
             clerkId,
@@ -86,7 +81,7 @@ export async function POST(req: NextRequest) {
         return newBooking;
       },
       {
-        // Тусгаарлах түвшинг дээшлүүлснээр зэрэг хүсэлтийг дараалалд оруулна
+     
         isolationLevel: "Serializable",
         maxWait: 5000,
         timeout: 10000,
